@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📥 Receiver – Secure Exchange</title>
+  <style>
+    /* Same styles as sender.html – copy the <style> block from sender */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+    .app { width: 100%; max-width: 700px; background: #ffffff; border-radius: 32px; box-shadow: 0 20px 60px rgba(0,20,40,0.12); padding: 28px 32px 32px; }
+    h1 { font-size: 24px; font-weight: 700; color: #0b1a2f; display: flex; align-items: center; gap: 10px; margin-bottom: 24px; border-bottom: 2px solid #eef2f6; padding-bottom: 16px; }
+    h1 small { font-size: 14px; font-weight: 500; color: #5b6f82; margin-left: auto; }
+    .card { background: #f8fafc; border-radius: 20px; padding: 24px 28px; margin-bottom: 24px; border: 1px solid #eef2f6; }
+    .card-title { font-size: 15px; font-weight: 600; color: #1e2f40; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 13px; font-weight: 500; color: #2c3f54; margin-bottom: 4px; }
+    input { width: 100%; padding: 12px 16px; border: 1.5px solid #dde3ea; border-radius: 14px; font-size: 14px; font-family: inherit; background: #fff; transition: border 0.2s, box-shadow 0.2s; color: #0b1a2f; }
+    input:focus { outline: none; border-color: #0b1a2f; box-shadow: 0 0 0 4px rgba(11,26,47,0.08); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 28px; border: none; border-radius: 30px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+    .btn-primary { background: #0b1a2f; color: #fff; }
+    .btn-primary:hover { background: #1a2f47; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(11,26,47,0.25); }
+    .btn-secondary { background: #e2e8f0; color: #1e2f40; }
+    .btn-secondary:hover { background: #d0d8e3; }
+    .btn-danger { background: #fce8e8; color: #b13a3a; }
+    .btn-danger:hover { background: #f5d6d6; }
+    .btn-block { width: 100%; justify-content: center; }
+    .btn-sm { padding: 6px 16px; font-size: 12px; border-radius: 20px; }
+    .flex { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .mt-16 { margin-top: 16px; }
+    .enc-status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #5b6f82; padding: 6px 14px; background: #eef2f6; border-radius: 30px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot.green { background: #2b8a4a; }
+    .dot.red { background: #b13a3a; }
+    .message-list { display: flex; flex-direction: column; gap: 14px; max-height: 460px; overflow-y: auto; padding-right: 4px; }
+    .message-list::-webkit-scrollbar { width: 6px; }
+    .message-list::-webkit-scrollbar-track { background: #eef2f6; border-radius: 10px; }
+    .message-list::-webkit-scrollbar-thumb { background: #c8d2de; border-radius: 10px; }
+    .message-item { background: #fff; border-radius: 18px; padding: 18px 22px; border: 1px solid #eef2f6; animation: slideIn 0.25s ease; }
+    @keyframes slideIn { 0% { opacity:0; transform:translateY(8px); } 100% { opacity:1; transform:translateY(0); } }
+    .message-meta { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 8px; }
+    .message-meta .from { font-weight: 600; font-size: 14px; color: #0b1a2f; }
+    .message-meta .time { font-size: 12px; color: #7b8fa0; }
+    .message-text { font-size: 15px; line-height: 1.6; color: #1e2f40; white-space: pre-wrap; word-break: break-word; }
+    .message-image { margin-top: 12px; max-width: 260px; border-radius: 14px; border: 1px solid #eef2f6; overflow: hidden; }
+    .message-image img { width: 100%; height: auto; display: block; }
+    .empty-state { text-align: center; padding: 48px 20px; color: #7b8fa0; }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+    .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #0b1a2f; color: #fff; padding: 14px 32px; border-radius: 40px; font-weight: 500; font-size: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.25); opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none; z-index: 999; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .auth-container { display: block; }
+    .main-container { display: none; }
+    .auth-toggle { text-align: center; margin-top: 12px; font-size: 14px; color: #5b6f82; }
+    .auth-toggle a { color: #0b1a2f; font-weight: 600; cursor: pointer; text-decoration: underline; }
+    .auth-toggle a:hover { color: #1a2f47; }
+    /* Utility classes to avoid inline styles */
+    .header-row { margin-bottom: 16px; }
+    .reset-h1 { border: none; padding: 0; margin: 0; }
+    .key-status-row { margin-top: 8px; }
+    .no-margin-bottom { margin-bottom: 0; }
+    .user-info { display: flex; align-items: center; gap: 12px; }
+    .user-info span { font-size: 14px; font-weight: 500; color: #1e2f40; }
+    .supabase-config { background: #f1f5f9; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; font-size: 13px; color: #1e2f40; }
+    .supabase-config code { background: #e2e8f0; padding: 2px 8px; border-radius: 6px; font-size: 12px; }
+    @media (max-width: 640px) { .app { padding: 16px; border-radius: 20px; } .card { padding: 16px 18px; } }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div id="authContainer" class="auth-container">
+    <h1>🔐 Receiver Login</h1>
+    <div class="card">
+      <div class="supabase-config">⚙️ Connected to Supabase via <code>{{SUPABASE_URL}}</code></div>
+      <div id="authForm">
+        <div class="form-group">
+          <label for="authUsername">Username</label>
+          <input type="text" id="authUsername" placeholder="Choose a username" />
+        </div>
+        <div class="form-group">
+          <label for="authPassword">Password</label>
+          <input type="password" id="authPassword" placeholder="Enter password" />
+        </div>
+        <button class="btn btn-primary btn-block" id="authSubmitBtn">Login</button>
+        <div class="auth-toggle">
+          <span id="authToggleText">Don't have an account? <a id="authToggleLink">Register</a></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <div id="mainContainer" class="main-container">
+    <div class="flex-between header-row">
+      <h1 class="reset-h1">📥 Secure Receiver <small>User 1</small></h1>
+      <div class="user-info">
+        <span id="loggedInUser"></span>
+        <button class="btn btn-danger btn-sm" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+
+      <div class="card">
+      <div class="card-title">🔑 Decryption Passphrase</div>
+      <div class="form-group">
+        <label for="receiverPass">Shared secret passphrase</label>
+        <input type="password" id="receiverPass" placeholder="Enter the shared passphrase..." />
+      </div>
+      <button class="btn btn-secondary btn-block" id="setKeyBtn">Set Decryption Key</button>
+      <div class="flex key-status-row">
+        <span class="enc-status" id="keyStatus"><span class="dot red"></span> No key set</span>
+      </div>
+    </div>
+
+      <div class="card">
+      <div class="flex-between">
+        <div class="card-title no-margin-bottom">📥 Received Messages</div>
+        <button class="btn btn-primary btn-sm" id="refreshBtn">🔄 Refresh</button>
+      </div>
+      <div id="receivedList" class="message-list mt-16">
+        <div class="empty-state"><div class="icon">📭</div><p>No messages received yet.<br />Ask User 2 to send one.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function() {
+  'use strict';
+  const SUPABASE_URL = '{{SUPABASE_URL}}';
+  const SUPABASE_ANON_KEY = '{{SUPABASE_ANON_KEY}}';
+  const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const SESSION_KEY = 'receiver_session';
+
+  // ─── DOM refs ───
+  const authContainer = document.getElementById('authContainer');
+  const mainContainer = document.getElementById('mainContainer');
+  const authUsername = document.getElementById('authUsername');
+  const authPassword = document.getElementById('authPassword');
+  const authSubmitBtn = document.getElementById('authSubmitBtn');
+  const authToggleText = document.getElementById('authToggleText');
+  const authToggleLink = document.getElementById('authToggleLink');
+  const loggedInUser = document.getElementById('loggedInUser');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const receiverPass = document.getElementById('receiverPass');
+  const setKeyBtn = document.getElementById('setKeyBtn');
+  const keyStatus = document.getElementById('keyStatus');
+  const receivedList = document.getElementById('receivedList');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const toast = document.getElementById('toast');
+
+  let isLoginMode = true;
+  let receiverKey = null;
+  let currentUser = null;
+
+  function getSession() { return localStorage.getItem(SESSION_KEY) || null; }
+  function setSession(u) { localStorage.setItem(SESSION_KEY, u); }
+  function clearSession() { localStorage.removeItem(SESSION_KEY); }
+  function isLoggedIn() { return !!getSession(); }
+
+  function showToast(msg, duration=2800) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.classList.remove('show'), duration);
+  }
+
+  function renderAuthForm() {
+    if (isLoginMode) {
+      authSubmitBtn.textContent = 'Login';
+      authToggleText.innerHTML = `Don't have an account? <a id="authToggleLink">Register</a>`;
+    } else {
+      authSubmitBtn.textContent = 'Register';
+      authToggleText.innerHTML = `Already have an account? <a id="authToggleLink">Login</a>`;
+    }
+    document.getElementById('authToggleLink').addEventListener('click', (e) => {
+      e.preventDefault(); isLoginMode = !isLoginMode; renderAuthForm();
+    });
+    authUsername.value = '';
+    authPassword.value = '';
+  }
+
+  async function handleAuth() {
+    const username = authUsername.value.trim();
+    const password = authPassword.value.trim();
+    if (!username || !password) { showToast('Please fill in both fields.', 2000); return; }
+    try {
+      if (isLoginMode) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('username')
+          .eq('username', username)
+          .eq('password', password)
+          .maybeSingle();
+        if (error) throw error;
+        if (data) { setSession(username); currentUser = username; showToast(`Welcome back, ${username}!`, 2000); showMainApp(); }
+        else showToast('Invalid username or password.', 2000);
+      } else {
+        const { error } = await supabase
+          .from('users')
+          .insert([{ username, password, role: 'receiver' }]);
+        if (error) {
+          if (error.code === '23505') showToast('Username already exists.', 2000);
+          else throw error;
+          return;
+        }
+        setSession(username); currentUser = username;
+        showToast(`Account created! Welcome, ${username}`, 2000);
+        showMainApp();
+      }
+    } catch (err) { console.error(err); showToast('Error: ' + err.message, 3000); }
+  }
+
+  function logout() { clearSession(); currentUser = null; receiverKey = null; keyStatus.innerHTML = `<span class="dot red"></span> No key set`; showMainApp(); showToast('Logged out.', 1500); }
+
+  function showMainApp() {
+    if (isLoggedIn()) {
+      authContainer.style.display = 'none';
+      mainContainer.style.display = 'block';
+      currentUser = getSession();
+      loggedInUser.textContent = `👤 ${currentUser}`;
+      receiverKey = null;
+      keyStatus.innerHTML = `<span class="dot red"></span> No key set`;
+      renderReceivedMessages();
+    } else {
+      authContainer.style.display = 'block';
+      mainContainer.style.display = 'none';
+      renderAuthForm();
+    }
+  }
+
+  function formatTime(ts) { return new Date(ts).toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
+  function arrayBufferToBase64(buf) { const bytes = new Uint8Array(buf); let binary=''; for (let i=0;i<bytes.length;i++) binary += String.fromCharCode(bytes[i]); return btoa(binary); }
+  function base64ToArrayBuffer(base64) { const binary=atob(base64); const bytes=new Uint8Array(binary.length); for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i); return bytes.buffer; }
+  function escapeHtml(str) { const d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
+
+  async function deriveKey(passphrase) {
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name:'PBKDF2', salt: enc.encode('SecureExchangeSalt2026'), iterations: 100000, hash:'SHA-256' },
+      keyMaterial, { name:'AES-GCM', length:256 }, false, ['decrypt']);
+  }
+  async function decryptMessage(key, ciphertextB64) {
+    try {
+      const combined = new Uint8Array(base64ToArrayBuffer(ciphertextB64));
+      const iv = combined.slice(0, 12);
+      const encrypted = combined.slice(12);
+      const decrypted = await crypto.subtle.decrypt({ name:'AES-GCM', iv }, key, encrypted);
+      return new TextDecoder().decode(decrypted);
+    } catch { return null; }
+  }
+
+  async function renderReceivedMessages() {
+    if (!receiverKey) {
+      receivedList.innerHTML = `<div class="empty-state"><div class="icon">🔑</div><p>Set the decryption passphrase first.</p></div>`;
+      return;
+    }
+    try {
+      const { data, error } = await supabase.from('messages').select('*').eq('role', 'sender').order('timestamp', { ascending: false });
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        receivedList.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>No messages received yet.<br />Ask User 2 to send one.</p></div>`;
+        return;
+      }
+      const msgs = data.slice().reverse();
+      let html = '';
+      let anyError = false;
+      for (const m of msgs) {
+        let decryptedText = '⚠️ Could not decrypt';
+        let decryptedOk = false;
+        if (m.text) {
+          const dec = await decryptMessage(receiverKey, m.text);
+          if (dec !== null) { decryptedText = dec; decryptedOk = true; } else anyError = true;
+        } else { decryptedText = ''; decryptedOk = true; }
+        const hasImage = m.image && m.image.length > 0;
+        let imageSrc = hasImage ? `data:image/jpeg;base64,${m.image}` : null;
+        html += `<div class="message-item">
+          <div class="message-meta"><span class="from">📥 From User 2</span><span class="time">${formatTime(m.timestamp)}</span></div>
+          <div class="message-text">${escapeHtml(decryptedText)}</div>
+          ${imageSrc ? `<div class="message-image"><img src="${imageSrc}" alt="received image" /></div>` : ''}
+          <div style="margin-top:8px;font-size:12px;color:#7b8fa0;">${decryptedOk ? '🔓 decrypted' : '⚠️ decryption failed'}</div>
+        </div>`;
+      }
+      receivedList.innerHTML = html;
+      if (anyError) showToast('Some messages could not be decrypted. Check your passphrase.', 3000);
+    } catch(err) { console.error(err); showToast('Error loading messages: ' + err.message, 3000); }
+  }
+
+  async function setKey() {
+    const pass = receiverPass.value.trim();
+    if (!pass) { showToast('Please enter a passphrase.', 2000); return; }
+    try {
+      receiverKey = await deriveKey(pass);
+      keyStatus.innerHTML = `<span class="dot green"></span> Key set (AES-256)`;
+      showToast('✅ Receiver key set successfully.', 2000);
+      await renderReceivedMessages();
+    } catch(e) { showToast('❌ Failed to derive key.', 2000); console.error(e); }
+  }
+
+  // ─── Event listeners ───
+  authSubmitBtn.addEventListener('click', handleAuth);
+  authUsername.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAuth(); });
+  authPassword.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAuth(); });
+  logoutBtn.addEventListener('click', logout);
+  setKeyBtn.addEventListener('click', setKey);
+  receiverPass.addEventListener('keydown', (e) => { if (e.key === 'Enter') setKey(); });
+  refreshBtn.addEventListener('click', async () => {
+    if (receiverKey) { await renderReceivedMessages(); showToast('Inbox refreshed.', 1200); }
+    else showToast('Set decryption key first.', 2000);
+  });
+
+  showMainApp();
+  if (isLoggedIn()) showToast('🔐 Set the shared passphrase to decrypt messages.', 3000);
+})();
+</script>
+</body>
+</html>
