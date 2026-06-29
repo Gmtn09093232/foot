@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>📥 Receiver – Secure Exchange</title>
   <style>
-    /* Same styles as sender.html – copy the <style> block from sender */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
     .app { width: 100%; max-width: 700px; background: #ffffff; border-radius: 32px; box-shadow: 0 20px 60px rgba(0,20,40,0.12); padding: 28px 32px 32px; }
@@ -15,8 +14,9 @@
     .card-title { font-size: 15px; font-weight: 600; color: #1e2f40; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
     .form-group { margin-bottom: 16px; }
     label { display: block; font-size: 13px; font-weight: 500; color: #2c3f54; margin-bottom: 4px; }
-    input { width: 100%; padding: 12px 16px; border: 1.5px solid #dde3ea; border-radius: 14px; font-size: 14px; font-family: inherit; background: #fff; transition: border 0.2s, box-shadow 0.2s; color: #0b1a2f; }
-    input:focus { outline: none; border-color: #0b1a2f; box-shadow: 0 0 0 4px rgba(11,26,47,0.08); }
+    input, textarea { width: 100%; padding: 12px 16px; border: 1.5px solid #dde3ea; border-radius: 14px; font-size: 14px; font-family: inherit; background: #fff; transition: border 0.2s, box-shadow 0.2s; color: #0b1a2f; }
+    input:focus, textarea:focus { outline: none; border-color: #0b1a2f; box-shadow: 0 0 0 4px rgba(11,26,47,0.08); }
+    textarea { resize: vertical; min-height: 90px; }
     .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 28px; border: none; border-radius: 30px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
     .btn-primary { background: #0b1a2f; color: #fff; }
     .btn-primary:hover { background: #1a2f47; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(11,26,47,0.25); }
@@ -54,11 +54,6 @@
     .auth-toggle { text-align: center; margin-top: 12px; font-size: 14px; color: #5b6f82; }
     .auth-toggle a { color: #0b1a2f; font-weight: 600; cursor: pointer; text-decoration: underline; }
     .auth-toggle a:hover { color: #1a2f47; }
-    /* Utility classes to avoid inline styles */
-    .header-row { margin-bottom: 16px; }
-    .reset-h1 { border: none; padding: 0; margin: 0; }
-    .key-status-row { margin-top: 8px; }
-    .no-margin-bottom { margin-bottom: 0; }
     .user-info { display: flex; align-items: center; gap: 12px; }
     .user-info span { font-size: 14px; font-weight: 500; color: #1e2f40; }
     .supabase-config { background: #f1f5f9; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; font-size: 13px; color: #1e2f40; }
@@ -68,18 +63,33 @@
 </head>
 <body>
 <div class="app">
+  <!-- AUTH SECTION -->
   <div id="authContainer" class="auth-container">
     <h1>🔐 Receiver Login</h1>
     <div class="card">
       <div class="supabase-config">⚙️ Connected to Supabase via <code>{{SUPABASE_URL}}</code></div>
       <div id="authForm">
-        <div class="form-group">
-          <label for="authUsername">Username</label>
-          <input type="text" id="authUsername" placeholder="Choose a username" />
+        <!-- Login fields (always visible) -->
+        <div id="loginFields">
+          <div class="form-group">
+            <label for="authUsername">Username</label>
+            <input type="text" id="authUsername" placeholder="Enter username" />
+          </div>
+          <div class="form-group">
+            <label for="authPassword">Password</label>
+            <input type="password" id="authPassword" placeholder="Enter password" />
+          </div>
         </div>
-        <div class="form-group">
-          <label for="authPassword">Password</label>
-          <input type="password" id="authPassword" placeholder="Enter password" />
+        <!-- Extra fields for registration (hidden by default) -->
+        <div id="registerFields" style="display:none;">
+          <div class="form-group">
+            <label for="authPhone">Phone Number</label>
+            <input type="text" id="authPhone" placeholder="e.g., +1234567890" />
+          </div>
+          <div class="form-group">
+            <label for="authEmail">Email</label>
+            <input type="email" id="authEmail" placeholder="you@example.com" />
+          </div>
         </div>
         <button class="btn btn-primary btn-block" id="authSubmitBtn">Login</button>
         <div class="auth-toggle">
@@ -89,30 +99,31 @@
     </div>
   </div>
 
-    <div id="mainContainer" class="main-container">
-    <div class="flex-between header-row">
-      <h1 class="reset-h1">📥 Secure Receiver <small>User 1</small></h1>
+  <!-- MAIN APP -->
+  <div id="mainContainer" class="main-container">
+    <div class="flex-between" style="margin-bottom:16px;">
+      <h1 style="border:none;padding:0;margin:0;">📥 Secure Receiver <small>User 1</small></h1>
       <div class="user-info">
         <span id="loggedInUser"></span>
         <button class="btn btn-danger btn-sm" id="logoutBtn">Logout</button>
       </div>
     </div>
 
-      <div class="card">
+    <div class="card">
       <div class="card-title">🔑 Decryption Passphrase</div>
       <div class="form-group">
         <label for="receiverPass">Shared secret passphrase</label>
         <input type="password" id="receiverPass" placeholder="Enter the shared passphrase..." />
       </div>
       <button class="btn btn-secondary btn-block" id="setKeyBtn">Set Decryption Key</button>
-      <div class="flex key-status-row">
+      <div class="flex" style="margin-top:8px;">
         <span class="enc-status" id="keyStatus"><span class="dot red"></span> No key set</span>
       </div>
     </div>
 
-      <div class="card">
+    <div class="card">
       <div class="flex-between">
-        <div class="card-title no-margin-bottom">📥 Received Messages</div>
+        <div class="card-title" style="margin-bottom:0;">📥 Received Messages</div>
         <button class="btn btn-primary btn-sm" id="refreshBtn">🔄 Refresh</button>
       </div>
       <div id="receivedList" class="message-list mt-16">
@@ -132,14 +143,18 @@
   const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const SESSION_KEY = 'receiver_session';
 
-  // ─── DOM refs ───
+  // DOM refs
   const authContainer = document.getElementById('authContainer');
   const mainContainer = document.getElementById('mainContainer');
   const authUsername = document.getElementById('authUsername');
   const authPassword = document.getElementById('authPassword');
+  const authPhone = document.getElementById('authPhone');
+  const authEmail = document.getElementById('authEmail');
   const authSubmitBtn = document.getElementById('authSubmitBtn');
   const authToggleText = document.getElementById('authToggleText');
   const authToggleLink = document.getElementById('authToggleLink');
+  const loginFields = document.getElementById('loginFields');
+  const registerFields = document.getElementById('registerFields');
   const loggedInUser = document.getElementById('loggedInUser');
   const logoutBtn = document.getElementById('logoutBtn');
   const receiverPass = document.getElementById('receiverPass');
@@ -169,23 +184,32 @@
     if (isLoginMode) {
       authSubmitBtn.textContent = 'Login';
       authToggleText.innerHTML = `Don't have an account? <a id="authToggleLink">Register</a>`;
+      loginFields.style.display = 'block';
+      registerFields.style.display = 'none';
     } else {
       authSubmitBtn.textContent = 'Register';
       authToggleText.innerHTML = `Already have an account? <a id="authToggleLink">Login</a>`;
+      loginFields.style.display = 'block';
+      registerFields.style.display = 'block';
     }
     document.getElementById('authToggleLink').addEventListener('click', (e) => {
       e.preventDefault(); isLoginMode = !isLoginMode; renderAuthForm();
     });
+    // clear fields
     authUsername.value = '';
     authPassword.value = '';
+    authPhone.value = '';
+    authEmail.value = '';
   }
 
   async function handleAuth() {
     const username = authUsername.value.trim();
     const password = authPassword.value.trim();
-    if (!username || !password) { showToast('Please fill in both fields.', 2000); return; }
+    if (!username || !password) { showToast('Please fill in username and password.', 2000); return; }
+
     try {
       if (isLoginMode) {
+        // Login
         const { data, error } = await supabase
           .from('users')
           .select('username')
@@ -193,22 +217,39 @@
           .eq('password', password)
           .maybeSingle();
         if (error) throw error;
-        if (data) { setSession(username); currentUser = username; showToast(`Welcome back, ${username}!`, 2000); showMainApp(); }
-        else showToast('Invalid username or password.', 2000);
+        if (data) {
+          setSession(username);
+          currentUser = username;
+          showToast(`Welcome back, ${username}!`, 2000);
+          showMainApp();
+        } else {
+          showToast('Invalid username or password.', 2000);
+        }
       } else {
+        // Registration – require phone and email
+        const phone = authPhone.value.trim();
+        const email = authEmail.value.trim();
+        if (!phone || !email) {
+          showToast('Please fill in phone and email.', 2000);
+          return;
+        }
         const { error } = await supabase
           .from('users')
-          .insert([{ username, password, role: 'receiver' }]);
+          .insert([{ username, password, role: 'receiver', phone, email }]);
         if (error) {
           if (error.code === '23505') showToast('Username already exists.', 2000);
           else throw error;
           return;
         }
-        setSession(username); currentUser = username;
+        setSession(username);
+        currentUser = username;
         showToast(`Account created! Welcome, ${username}`, 2000);
         showMainApp();
       }
-    } catch (err) { console.error(err); showToast('Error: ' + err.message, 3000); }
+    } catch (err) {
+      console.error(err);
+      showToast('Error: ' + err.message, 3000);
+    }
   }
 
   function logout() { clearSession(); currentUser = null; receiverKey = null; keyStatus.innerHTML = `<span class="dot red"></span> No key set`; showMainApp(); showToast('Logged out.', 1500); }
@@ -229,6 +270,7 @@
     }
   }
 
+  // ─── Message and decryption functions ──────────────────────────
   function formatTime(ts) { return new Date(ts).toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
   function arrayBufferToBase64(buf) { const bytes = new Uint8Array(buf); let binary=''; for (let i=0;i<bytes.length;i++) binary += String.fromCharCode(bytes[i]); return btoa(binary); }
   function base64ToArrayBuffer(base64) { const binary=atob(base64); const bytes=new Uint8Array(binary.length); for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i); return bytes.buffer; }
