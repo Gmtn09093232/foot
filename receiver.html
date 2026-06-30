@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>📥 Receiver – Secure Exchange</title>
   <style>
-    /* Same styles – keep them */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
     .app { width: 100%; max-width: 700px; background: #ffffff; border-radius: 32px; box-shadow: 0 20px 60px rgba(0,20,40,0.12); padding: 28px 32px 32px; }
@@ -15,8 +14,8 @@
     .card-title { font-size: 15px; font-weight: 600; color: #1e2f40; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
     .form-group { margin-bottom: 16px; }
     label { display: block; font-size: 13px; font-weight: 500; color: #2c3f54; margin-bottom: 4px; }
-    input, textarea { width: 100%; padding: 12px 16px; border: 1.5px solid #dde3ea; border-radius: 14px; font-size: 14px; font-family: inherit; background: #fff; transition: border 0.2s, box-shadow 0.2s; color: #0b1a2f; }
-    input:focus, textarea:focus { outline: none; border-color: #0b1a2f; box-shadow: 0 0 0 4px rgba(11,26,47,0.08); }
+    input { width: 100%; padding: 12px 16px; border: 1.5px solid #dde3ea; border-radius: 14px; font-size: 14px; font-family: inherit; background: #fff; transition: border 0.2s, box-shadow 0.2s; color: #0b1a2f; }
+    input:focus { outline: none; border-color: #0b1a2f; box-shadow: 0 0 0 4px rgba(11,26,47,0.08); }
     .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 28px; border: none; border-radius: 30px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
     .btn-primary { background: #0b1a2f; color: #fff; }
     .btn-primary:hover { background: #1a2f47; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(11,26,47,0.25); }
@@ -68,21 +67,20 @@
     </div>
   </div>
 
-  <!-- Profile Photo Upload Section -->
   <div class="card">
-    <div class="card-title">🖼️ Profile Photo</div>
+    <div class="card-title">📷 Upload Profile Photo</div>
     <div class="form-group">
       <div class="file-upload-wrap">
-        <label class="file-label" for="profilePhotoInput">📎 Choose photo</label>
-        <input type="file" id="profilePhotoInput" accept="image/*" />
-        <span class="file-name" id="profilePhotoName">No photo selected</span>
-        <button class="clear-file" id="clearProfilePhoto" title="Remove photo">✕</button>
+        <label class="file-label" for="profileImage">📎 Choose photo</label>
+        <input type="file" id="profileImage" accept="image/*" />
+        <span class="file-name" id="fileName">No photo selected</span>
+        <button class="clear-file" id="clearProfileImage" title="Remove">✕</button>
       </div>
-      <div id="profilePhotoPreview" class="file-preview" style="display:none;">
-        <img id="profilePhotoPreviewImg" src="" alt="profile preview" />
+      <div id="profilePreviewContainer" class="file-preview" style="display:none;">
+        <img id="profilePreview" src="" alt="profile" />
       </div>
+      <button class="btn btn-secondary btn-block" id="uploadProfileBtn" style="margin-top:12px;">Upload Photo</button>
     </div>
-    <button class="btn btn-primary btn-block" id="uploadProfilePhotoBtn">Upload Profile Photo</button>
   </div>
 
   <div class="card">
@@ -91,7 +89,7 @@
       <button class="btn btn-primary btn-sm" id="refreshBtn">🔄 Refresh</button>
     </div>
     <div id="receivedList" class="message-list mt-16">
-      <div class="empty-state"><div class="icon">📭</div><p>No messages received yet.<br />Ask User 2 to send one.</p></div>
+      <div class="empty-state"><div class="icon">📭</div><p>No messages for you yet.<br />Ask User 2 to send one.</p></div>
     </div>
   </div>
 </div>
@@ -103,6 +101,9 @@
   'use strict';
   const SUPABASE_URL = '{{SUPABASE_URL}}';
   const SUPABASE_ANON_KEY = '{{SUPABASE_ANON_KEY}}';
+
+  // Must match sender's passphrase
+  const DEFAULT_PASSPHRASE = 'my-secure-shared-secret';
 
   const session = localStorage.getItem('secure_session');
   if (!session) {
@@ -130,15 +131,14 @@
   const receivedList = document.getElementById('receivedList');
   const refreshBtn = document.getElementById('refreshBtn');
   const toast = document.getElementById('toast');
-  const profilePhotoInput = document.getElementById('profilePhotoInput');
-  const profilePhotoName = document.getElementById('profilePhotoName');
-  const clearProfilePhoto = document.getElementById('clearProfilePhoto');
-  const profilePhotoPreview = document.getElementById('profilePhotoPreview');
-  const profilePhotoPreviewImg = document.getElementById('profilePhotoPreviewImg');
-  const uploadProfilePhotoBtn = document.getElementById('uploadProfilePhotoBtn');
+  const profileImage = document.getElementById('profileImage');
+  const fileName = document.getElementById('fileName');
+  const clearProfileImage = document.getElementById('clearProfileImage');
+  const profilePreviewContainer = document.getElementById('profilePreviewContainer');
+  const profilePreview = document.getElementById('profilePreview');
+  const uploadProfileBtn = document.getElementById('uploadProfileBtn');
 
-  let receiverKey = null;
-  let selectedProfilePhotoData = null;
+  let profileImageData = null;
 
   loggedInUser.textContent = `👤 ${sessionData.username}`;
 
@@ -155,107 +155,70 @@
   }
   logoutBtn.addEventListener('click', logout);
 
-  // ─── Profile Photo Upload ──────────────────────────────────────
-  function clearProfilePhotoData() {
-    selectedProfilePhotoData = null;
-    profilePhotoInput.value = '';
-    profilePhotoName.textContent = 'No photo selected';
-    profilePhotoPreview.style.display = 'none';
-    profilePhotoPreviewImg.src = '';
-  }
-
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  async function handleProfilePhotoSelect(file) {
-    if (!file) { clearProfilePhotoData(); return; }
-    if (!file.type.startsWith('image/')) {
-      showToast('Please select an image file.', 2000);
-      clearProfilePhotoData();
-      return;
-    }
-    try {
-      const b64 = await fileToBase64(file);
-      selectedProfilePhotoData = b64;
-      profilePhotoName.textContent = file.name;
-      profilePhotoPreviewImg.src = `data:${file.type};base64,${b64}`;
-      profilePhotoPreview.style.display = 'block';
-    } catch(e) {
-      showToast('Failed to read image.', 2000);
-      clearProfilePhotoData();
-    }
-  }
-
-  async function uploadProfilePhoto() {
-    if (!selectedProfilePhotoData) {
-      showToast('Please select a photo first.', 2000);
-      return;
-    }
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ profile_photo: selectedProfilePhotoData })
-        .eq('username', sessionData.username);
-      if (error) throw error;
-      showToast('✅ Profile photo uploaded successfully!', 2000);
-      // Optionally clear the preview
-      clearProfilePhotoData();
-    } catch (err) {
-      console.error(err);
-      showToast('Error uploading photo: ' + err.message, 3000);
-    }
-  }
-
-  profilePhotoInput.addEventListener('change', (e) => {
-    if (e.target.files && e.target.files[0]) {
-      handleProfilePhotoSelect(e.target.files[0]);
-    } else {
-      clearProfilePhotoData();
-    }
-  });
-  clearProfilePhoto.addEventListener('click', clearProfilePhotoData);
-  uploadProfilePhotoBtn.addEventListener('click', uploadProfilePhoto);
-
   // ─── Decryption utilities ──────────────────────────────────────
-  function formatTime(ts) { return new Date(ts).toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
-  function arrayBufferToBase64(buf) { const bytes = new Uint8Array(buf); let binary=''; for (let i=0;i<bytes.length;i++) binary += String.fromCharCode(bytes[i]); return btoa(binary); }
-  function base64ToArrayBuffer(base64) { const binary=atob(base64); const bytes=new Uint8Array(binary.length); for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i); return bytes.buffer; }
-  function escapeHtml(str) { const d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
+  function arrayBufferToBase64(buf) {
+    const bytes = new Uint8Array(buf);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
+  }
+
+  function base64ToArrayBuffer(base64) {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes.buffer;
+  }
 
   async function deriveKey(passphrase) {
     const enc = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
-    return crypto.subtle.deriveKey({ name:'PBKDF2', salt: enc.encode('SecureExchangeSalt2026'), iterations: 100000, hash:'SHA-256' },
-      keyMaterial, { name:'AES-GCM', length:256 }, false, ['decrypt']);
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw',
+      enc.encode(passphrase),
+      'PBKDF2',
+      false,
+      ['deriveKey']
+    );
+    return crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt: enc.encode('SecureExchangeSalt2026'),
+        iterations: 100000,
+        hash: 'SHA-256'
+      },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt']
+    );
   }
+
   async function decryptMessage(key, ciphertextB64) {
     try {
       const combined = new Uint8Array(base64ToArrayBuffer(ciphertextB64));
       const iv = combined.slice(0, 12);
       const encrypted = combined.slice(12);
-      const decrypted = await crypto.subtle.decrypt({ name:'AES-GCM', iv }, key, encrypted);
+      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, encrypted);
       return new TextDecoder().decode(decrypted);
     } catch { return null; }
   }
 
   // ─── Render received messages ──────────────────────────────────
-  async function renderReceivedMessages() {
-    // If no key, show message, but we removed the key input. So we'll use a fixed key like sender.
-    const DEFAULT_PASSPHRASE = 'my-secure-shared-secret'; // must match sender
-    try {
-      receiverKey = await deriveKey(DEFAULT_PASSPHRASE);
-    } catch(e) {
-      showToast('Error deriving key', 2000);
-      return;
-    }
+  function formatTime(ts) {
+    return new Date(ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
 
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  async function renderReceivedMessages() {
     try {
+      // Decryption key derived from fixed passphrase
+      const key = await deriveKey(DEFAULT_PASSPHRASE);
+
       const { data, error } = await supabase
         .from('messages')
         .select('*')
@@ -263,6 +226,7 @@
         .eq('receiver_username', sessionData.username)
         .order('timestamp', { ascending: false });
       if (error) throw error;
+
       if (!data || data.length === 0) {
         receivedList.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>No messages for you yet.<br />Ask User 2 to send one.</p></div>`;
         return;
@@ -274,10 +238,9 @@
         let decryptedText = '⚠️ Could not decrypt';
         let decryptedOk = false;
         if (m.text) {
-          const dec = await decryptMessage(receiverKey, m.text);
+          const dec = await decryptMessage(key, m.text);
           if (dec !== null) { decryptedText = dec; decryptedOk = true; } else anyError = true;
         } else { decryptedText = ''; decryptedOk = true; }
-        // If image is present, show it
         const hasImage = m.image && m.image.length > 0;
         let imageSrc = hasImage ? `data:image/jpeg;base64,${m.image}` : null;
         html += `<div class="message-item">
@@ -289,17 +252,76 @@
       }
       receivedList.innerHTML = html;
       if (anyError) showToast('Some messages could not be decrypted. Check passphrase.', 3000);
-    } catch(err) { console.error(err); showToast('Error loading messages: ' + err.message, 3000); }
+    } catch (err) {
+      console.error('Error rendering messages:', err);
+      showToast('Error loading messages: ' + err.message, 3000);
+    }
   }
 
+  // ─── Profile photo upload ──────────────────────────────────────
+  function clearProfileImageData() {
+    profileImageData = null;
+    profileImage.value = '';
+    fileName.textContent = 'No photo selected';
+    profilePreviewContainer.style.display = 'none';
+    profilePreview.src = '';
+  }
+
+  function handleProfileImageSelect(file) {
+    if (!file) { clearProfileImageData(); return; }
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select an image file.', 2000);
+      clearProfileImageData();
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      profileImageData = e.target.result.split(',')[1];
+      fileName.textContent = file.name;
+      profilePreview.src = e.target.result;
+      profilePreviewContainer.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function uploadProfilePhoto() {
+    if (!profileImageData) {
+      showToast('Please select a photo first.', 2000);
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ profile_photo: profileImageData })
+        .eq('username', sessionData.username);
+      if (error) throw error;
+      showToast('✅ Profile photo uploaded!', 2000);
+      clearProfileImageData();
+    } catch (err) {
+      console.error('Upload error:', err);
+      showToast('Error uploading photo: ' + err.message, 3000);
+    }
+  }
+
+  // ─── Event listeners ──────────────────────────────────────────
   refreshBtn.addEventListener('click', async () => {
     await renderReceivedMessages();
     showToast('Inbox refreshed.', 1200);
   });
 
-  // ─── Initial load ──────────────────────────────────────────────
+  profileImage.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleProfileImageSelect(e.target.files[0]);
+    } else {
+      clearProfileImageData();
+    }
+  });
+  clearProfileImage.addEventListener('click', clearProfileImageData);
+  uploadProfileBtn.addEventListener('click', uploadProfilePhoto);
+
+  // ─── Initial load ─────────────────────────────────────────────
   renderReceivedMessages();
-  showToast('📥 Your inbox. Upload a profile photo if you like.', 3000);
+  showToast('Welcome! Your messages will appear here.', 3000);
 })();
 </script>
 </body>
