@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>📥 Receiver – Secure Exchange</title>
   <style>
-    /* Same styles as sender – you can copy the <style> block from sender.html */
+    /* Same styles as sender – copy from sender.html */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
     .app { width: 100%; max-width: 700px; background: #ffffff; border-radius: 32px; box-shadow: 0 20px 60px rgba(0,20,40,0.12); padding: 28px 32px 32px; }
@@ -169,10 +169,16 @@
       return;
     }
     try {
-      const { data, error } = await supabase.from('messages').select('*').eq('role', 'sender').order('timestamp', { ascending: false });
+      // Fetch messages where receiver_username matches the logged-in user
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('role', 'sender')
+        .eq('receiver_username', sessionData.username)
+        .order('timestamp', { ascending: false });
       if (error) throw error;
       if (!data || data.length === 0) {
-        receivedList.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>No messages received yet.<br />Ask User 2 to send one.</p></div>`;
+        receivedList.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>No messages for you yet.<br />Ask User 2 to send one.</p></div>`;
         return;
       }
       const msgs = data.slice().reverse();
@@ -188,7 +194,7 @@
         const hasImage = m.image && m.image.length > 0;
         let imageSrc = hasImage ? `data:image/jpeg;base64,${m.image}` : null;
         html += `<div class="message-item">
-          <div class="message-meta"><span class="from">📥 From User 2</span><span class="time">${formatTime(m.timestamp)}</span></div>
+          <div class="message-meta"><span class="from">📥 From: ${m.sender_username || 'Unknown'}</span><span class="time">${formatTime(m.timestamp)}</span></div>
           <div class="message-text">${escapeHtml(decryptedText)}</div>
           ${imageSrc ? `<div class="message-image"><img src="${imageSrc}" alt="received image" /></div>` : ''}
           <div style="margin-top:8px;font-size:12px;color:#7b8fa0;">${decryptedOk ? '🔓 decrypted' : '⚠️ decryption failed'}</div>
