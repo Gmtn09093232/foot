@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>📤 Sender – Secure Exchange</title>
   <style>
-    /* Same styles as before, but no auth container */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
     .app { width: 100%; max-width: 700px; background: #ffffff; border-radius: 32px; box-shadow: 0 20px 60px rgba(0,20,40,0.12); padding: 28px 32px 32px; }
@@ -61,14 +60,10 @@
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .user-info { display: flex; align-items: center; gap: 12px; }
     .user-info span { font-size: 14px; font-weight: 500; color: #1e2f40; }
-    .supabase-config { background: #f1f5f9; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; font-size: 13px; color: #1e2f40; }
-    .supabase-config code { background: #e2e8f0; padding: 2px 8px; border-radius: 6px; font-size: 12px; }
-    @media (max-width: 640px) { .app { padding: 16px; border-radius: 20px; } .card { padding: 16px 18px; } }
   </style>
 </head>
 <body>
 <div class="app">
-  <!-- Header with user info and logout -->
   <div class="flex-between" style="margin-bottom:16px;">
     <h1 style="border:none;padding:0;margin:0;">📤 Secure Sender <small>User 2</small></h1>
     <div class="user-info">
@@ -128,30 +123,28 @@
   'use strict';
   const SUPABASE_URL = '{{SUPABASE_URL}}';
   const SUPABASE_ANON_KEY = '{{SUPABASE_ANON_KEY}}';
-  const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // ─── Session check ──────────────────────────────────────────────
   const session = localStorage.getItem('secure_session');
   if (!session) {
     window.location.href = '/login';
     return;
   }
   let sessionData;
-  try {
-    sessionData = JSON.parse(session);
-  } catch {
-    localStorage.removeItem('secure_session');
-    window.location.href = '/login';
-    return;
-  }
+  try { sessionData = JSON.parse(session); } catch { localStorage.removeItem('secure_session'); window.location.href = '/login'; return; }
   if (!sessionData.username || sessionData.role !== 'sender') {
-    // If not sender, maybe redirect to receiver? For now, just to login.
     localStorage.removeItem('secure_session');
     window.location.href = '/login';
     return;
   }
 
-  // ─── DOM refs ───────────────────────────────────────────────────
+  if (typeof window.supabase === 'undefined') {
+    document.getElementById('toast').textContent = '❌ Supabase library not loaded.';
+    document.getElementById('toast').classList.add('show');
+    return;
+  }
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // DOM refs
   const loggedInUser = document.getElementById('loggedInUser');
   const logoutBtn = document.getElementById('logoutBtn');
   const senderPass = document.getElementById('senderPass');
@@ -171,7 +164,6 @@
   let senderKey = null;
   let currentImageData = null;
 
-  // ─── UI ────────────────────────────────────────────────────────
   loggedInUser.textContent = `👤 ${sessionData.username}`;
 
   function showToast(msg, duration=2800) {
@@ -187,7 +179,7 @@
   }
   logoutBtn.addEventListener('click', logout);
 
-  // ─── Message and encryption functions (same as before) ───
+  // ─── Encryption utilities ──────────────────────────────────
   function formatTime(ts) { return new Date(ts).toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
   function arrayBufferToBase64(buf) { const bytes = new Uint8Array(buf); let binary=''; for (let i=0;i<bytes.length;i++) binary += String.fromCharCode(bytes[i]); return btoa(binary); }
   function base64ToArrayBuffer(base64) { const binary=atob(base64); const bytes=new Uint8Array(binary.length); for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i); return bytes.buffer; }
@@ -289,7 +281,6 @@
   clearImage.addEventListener('click', clearImageData);
   clearSentBtn.addEventListener('click', clearSent);
 
-  // ─── Initial load ─────────────────────────────────────────────
   renderSentMessages();
   showToast('🔐 Set a passphrase to start sending.', 3000);
 })();
