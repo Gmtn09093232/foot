@@ -28,10 +28,6 @@
     .flex { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
     .mt-16 { margin-top: 16px; }
-    .enc-status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #5b6f82; padding: 6px 14px; background: #eef2f6; border-radius: 30px; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-    .dot.green { background: #2b8a4a; }
-    .dot.red { background: #b13a3a; }
     .message-list { display: flex; flex-direction: column; gap: 14px; max-height: 460px; overflow-y: auto; padding-right: 4px; }
     .message-list::-webkit-scrollbar { width: 6px; }
     .message-list::-webkit-scrollbar-track { background: #eef2f6; border-radius: 10px; }
@@ -42,8 +38,6 @@
     .message-meta .from { font-weight: 600; font-size: 14px; color: #0b1a2f; }
     .message-meta .time { font-size: 12px; color: #7b8fa0; }
     .message-text { font-size: 15px; line-height: 1.6; color: #1e2f40; white-space: pre-wrap; word-break: break-word; }
-    .message-image { margin-top: 12px; max-width: 260px; border-radius: 14px; border: 1px solid #eef2f6; overflow: hidden; }
-    .message-image img { width: 100%; height: auto; display: block; }
     .empty-state { text-align: center; padding: 48px 20px; color: #7b8fa0; }
     .empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
     .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #0b1a2f; color: #fff; padding: 14px 32px; border-radius: 40px; font-weight: 500; font-size: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.25); opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none; z-index: 999; }
@@ -55,6 +49,7 @@
     .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; }
     .file-input-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
     .file-input-wrapper .btn { pointer-events: none; }
+    .status-badge { font-size: 13px; color: #2b8a4a; background: #e8f5e9; padding: 4px 12px; border-radius: 30px; display: inline-block; }
   </style>
 </head>
 <body>
@@ -79,15 +74,11 @@
     </div>
   </div>
 
+  <!-- Decryption status (auto) -->
   <div class="card">
-    <div class="card-title">🔑 Decryption Passphrase</div>
-    <div class="form-group">
-      <label for="receiverPass">Shared secret passphrase</label>
-      <input type="password" id="receiverPass" placeholder="Enter the shared passphrase..." />
-    </div>
-    <button class="btn btn-secondary btn-block" id="setKeyBtn">Set Decryption Key</button>
-    <div class="flex" style="margin-top:8px;">
-      <span class="enc-status" id="keyStatus"><span class="dot red"></span> No key set</span>
+    <div class="flex-between">
+      <span class="card-title" style="margin-bottom:0;">🔐 Encryption Status</span>
+      <span class="status-badge">🔓 Auto-decrypt enabled</span>
     </div>
   </div>
 
@@ -110,7 +101,7 @@
   const SUPABASE_URL = '{{SUPABASE_URL}}';
   const SUPABASE_ANON_KEY = '{{SUPABASE_ANON_KEY}}';
 
-  // Fixed passphrase (same as sender)
+  // ─── Fixed passphrase (must match sender's) ──────────────────
   const DEFAULT_PASSPHRASE = 'my-secure-shared-secret';
 
   const session = localStorage.getItem('secure_session');
@@ -136,9 +127,6 @@
   // DOM refs
   const loggedInUser = document.getElementById('loggedInUser');
   const logoutBtn = document.getElementById('logoutBtn');
-  const receiverPass = document.getElementById('receiverPass');
-  const setKeyBtn = document.getElementById('setKeyBtn');
-  const keyStatus = document.getElementById('keyStatus');
   const receivedList = document.getElementById('receivedList');
   const refreshBtn = document.getElementById('refreshBtn');
   const toast = document.getElementById('toast');
@@ -174,6 +162,7 @@
       if (error) throw error;
       if (data && data.profile_image) {
         profilePreview.src = `data:image/jpeg;base64,${data.profile_image}`;
+        profilePreview.alt = 'Profile photo';
       } else {
         profilePreview.src = '';
         profilePreview.alt = 'No photo';
@@ -199,6 +188,7 @@
           .eq('username', sessionData.username);
         if (error) throw error;
         profilePreview.src = `data:${file.type};base64,${base64}`;
+        profilePreview.alt = 'Profile photo';
         showToast('✅ Profile photo updated!', 2000);
       };
       reader.readAsDataURL(file);
@@ -232,7 +222,7 @@
   });
   removePhotoBtn.addEventListener('click', removeProfilePhoto);
 
-  // ─── Decryption ──────────────────────────────────────────────────
+  // ─── Decryption (auto) ──────────────────────────────────────────
   function arrayBufferToBase64(buf) {
     const bytes = new Uint8Array(buf);
     let binary = '';
@@ -291,7 +281,7 @@
 
   async function renderReceivedMessages() {
     if (!receiverKey) {
-      receivedList.innerHTML = `<div class="empty-state"><div class="icon">🔑</div><p>Set the decryption passphrase first.</p></div>`;
+      receivedList.innerHTML = `<div class="empty-state"><div class="icon">⏳</div><p>Initializing decryption key...</p></div>`;
       return;
     }
     try {
@@ -323,44 +313,35 @@
         </div>`;
       }
       receivedList.innerHTML = html;
-      if (anyError) showToast('Some messages could not be decrypted. Check your passphrase.', 3000);
+      if (anyError) showToast('Some messages could not be decrypted. Check the passphrase in the code.', 3000);
     } catch (err) {
       console.error(err);
       showToast('Error loading messages: ' + err.message, 3000);
     }
   }
 
-  async function setKey() {
-    const pass = receiverPass.value.trim();
-    if (!pass) {
-      showToast('Please enter a passphrase.', 2000);
-      return;
-    }
+  // ─── Init decryption key (auto) ──────────────────────────────
+  async function initDecryption() {
     try {
-      receiverKey = await deriveKey(pass);
-      keyStatus.innerHTML = `<span class="dot green"></span> Key set (AES-256)`;
-      showToast('✅ Receiver key set successfully.', 2000);
+      receiverKey = await deriveKey(DEFAULT_PASSPHRASE);
+      showToast('🔓 Auto-decryption enabled', 2000);
       await renderReceivedMessages();
     } catch (e) {
-      showToast('❌ Failed to derive key.', 2000);
+      showToast('❌ Failed to initialize decryption.', 3000);
       console.error(e);
     }
   }
 
   // ─── Event listeners ──────────────────────────────────────────
-  setKeyBtn.addEventListener('click', setKey);
-  receiverPass.addEventListener('keydown', (e) => { if (e.key === 'Enter') setKey(); });
   refreshBtn.addEventListener('click', async () => {
     if (receiverKey) { await renderReceivedMessages(); showToast('Inbox refreshed.', 1200); }
-    else showToast('Set decryption key first.', 2000);
+    else showToast('Decryption not ready. Please refresh again.', 2000);
   });
 
   // ─── Initial load ─────────────────────────────────────────────
   loadProfilePhoto();
-  // Auto-set the key using DEFAULT_PASSPHRASE if the user doesn't want to type it.
-  // Uncomment the next line to auto-set without user input:
-  // receiverPass.value = DEFAULT_PASSPHRASE; setKey();
-  showToast('🔐 Set the shared passphrase to decrypt messages.', 3000);
+  initDecryption();
+  showToast('🔐 Auto-decrypt enabled. Messages will appear automatically.', 3000);
 })();
 </script>
 </body>
