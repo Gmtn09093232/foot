@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>📥 Receiver – Secure Exchange</title>
   <style>
-    /* Same styles as sender – copy from sender.html */
+    /* Same styles – keep them */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
     .app { width: 100%; max-width: 700px; background: #ffffff; border-radius: 32px; box-shadow: 0 20px 60px rgba(0,20,40,0.12); padding: 28px 32px 32px; }
@@ -15,8 +15,8 @@
     .card-title { font-size: 15px; font-weight: 600; color: #1e2f40; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
     .form-group { margin-bottom: 16px; }
     label { display: block; font-size: 13px; font-weight: 500; color: #2c3f54; margin-bottom: 4px; }
-    input { width: 100%; padding: 12px 16px; border: 1.5px solid #dde3ea; border-radius: 14px; font-size: 14px; font-family: inherit; background: #fff; transition: border 0.2s, box-shadow 0.2s; color: #0b1a2f; }
-    input:focus { outline: none; border-color: #0b1a2f; box-shadow: 0 0 0 4px rgba(11,26,47,0.08); }
+    input, textarea { width: 100%; padding: 12px 16px; border: 1.5px solid #dde3ea; border-radius: 14px; font-size: 14px; font-family: inherit; background: #fff; transition: border 0.2s, box-shadow 0.2s; color: #0b1a2f; }
+    input:focus, textarea:focus { outline: none; border-color: #0b1a2f; box-shadow: 0 0 0 4px rgba(11,26,47,0.08); }
     .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 28px; border: none; border-radius: 30px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
     .btn-primary { background: #0b1a2f; color: #fff; }
     .btn-primary:hover { background: #1a2f47; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(11,26,47,0.25); }
@@ -29,10 +29,6 @@
     .flex { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
     .mt-16 { margin-top: 16px; }
-    .enc-status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #5b6f82; padding: 6px 14px; background: #eef2f6; border-radius: 30px; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-    .dot.green { background: #2b8a4a; }
-    .dot.red { background: #b13a3a; }
     .message-list { display: flex; flex-direction: column; gap: 14px; max-height: 460px; overflow-y: auto; padding-right: 4px; }
     .message-list::-webkit-scrollbar { width: 6px; }
     .message-list::-webkit-scrollbar-track { background: #eef2f6; border-radius: 10px; }
@@ -51,6 +47,15 @@
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .user-info { display: flex; align-items: center; gap: 12px; }
     .user-info span { font-size: 14px; font-weight: 500; color: #1e2f40; }
+    .file-upload-wrap { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 12px 16px; background: #fff; border: 1.5px dashed #dde3ea; border-radius: 14px; transition: border 0.2s; }
+    .file-upload-wrap:hover { border-color: #0b1a2f; }
+    .file-upload-wrap input[type="file"] { display: none; }
+    .file-label { display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; background: #eef2f6; border-radius: 30px; font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s; color: #1e2f40; }
+    .file-label:hover { background: #dce3ec; }
+    .file-name { font-size: 13px; color: #5b6f82; flex: 1; min-width: 80px; }
+    .clear-file { background: none; border: none; color: #b13a3a; font-size: 18px; cursor: pointer; padding: 0 6px; font-weight: 600; }
+    .file-preview { margin-top: 12px; max-width: 160px; border-radius: 14px; border: 1px solid #eef2f6; overflow: hidden; }
+    .file-preview img { width: 100%; height: auto; display: block; }
   </style>
 </head>
 <body>
@@ -63,16 +68,21 @@
     </div>
   </div>
 
+  <!-- Profile Photo Upload Section -->
   <div class="card">
-    <div class="card-title">🔑 Decryption Passphrase</div>
+    <div class="card-title">🖼️ Profile Photo</div>
     <div class="form-group">
-      <label for="receiverPass">Shared secret passphrase</label>
-      <input type="password" id="receiverPass" placeholder="Enter the shared passphrase..." />
+      <div class="file-upload-wrap">
+        <label class="file-label" for="profilePhotoInput">📎 Choose photo</label>
+        <input type="file" id="profilePhotoInput" accept="image/*" />
+        <span class="file-name" id="profilePhotoName">No photo selected</span>
+        <button class="clear-file" id="clearProfilePhoto" title="Remove photo">✕</button>
+      </div>
+      <div id="profilePhotoPreview" class="file-preview" style="display:none;">
+        <img id="profilePhotoPreviewImg" src="" alt="profile preview" />
+      </div>
     </div>
-    <button class="btn btn-secondary btn-block" id="setKeyBtn">Set Decryption Key</button>
-    <div class="flex" style="margin-top:8px;">
-      <span class="enc-status" id="keyStatus"><span class="dot red"></span> No key set</span>
-    </div>
+    <button class="btn btn-primary btn-block" id="uploadProfilePhotoBtn">Upload Profile Photo</button>
   </div>
 
   <div class="card">
@@ -117,14 +127,18 @@
   // DOM refs
   const loggedInUser = document.getElementById('loggedInUser');
   const logoutBtn = document.getElementById('logoutBtn');
-  const receiverPass = document.getElementById('receiverPass');
-  const setKeyBtn = document.getElementById('setKeyBtn');
-  const keyStatus = document.getElementById('keyStatus');
   const receivedList = document.getElementById('receivedList');
   const refreshBtn = document.getElementById('refreshBtn');
   const toast = document.getElementById('toast');
+  const profilePhotoInput = document.getElementById('profilePhotoInput');
+  const profilePhotoName = document.getElementById('profilePhotoName');
+  const clearProfilePhoto = document.getElementById('clearProfilePhoto');
+  const profilePhotoPreview = document.getElementById('profilePhotoPreview');
+  const profilePhotoPreviewImg = document.getElementById('profilePhotoPreviewImg');
+  const uploadProfilePhotoBtn = document.getElementById('uploadProfilePhotoBtn');
 
   let receiverKey = null;
+  let selectedProfilePhotoData = null;
 
   loggedInUser.textContent = `👤 ${sessionData.username}`;
 
@@ -141,7 +155,74 @@
   }
   logoutBtn.addEventListener('click', logout);
 
-  // ─── Decryption utilities ──────────────────────────────────
+  // ─── Profile Photo Upload ──────────────────────────────────────
+  function clearProfilePhotoData() {
+    selectedProfilePhotoData = null;
+    profilePhotoInput.value = '';
+    profilePhotoName.textContent = 'No photo selected';
+    profilePhotoPreview.style.display = 'none';
+    profilePhotoPreviewImg.src = '';
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleProfilePhotoSelect(file) {
+    if (!file) { clearProfilePhotoData(); return; }
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select an image file.', 2000);
+      clearProfilePhotoData();
+      return;
+    }
+    try {
+      const b64 = await fileToBase64(file);
+      selectedProfilePhotoData = b64;
+      profilePhotoName.textContent = file.name;
+      profilePhotoPreviewImg.src = `data:${file.type};base64,${b64}`;
+      profilePhotoPreview.style.display = 'block';
+    } catch(e) {
+      showToast('Failed to read image.', 2000);
+      clearProfilePhotoData();
+    }
+  }
+
+  async function uploadProfilePhoto() {
+    if (!selectedProfilePhotoData) {
+      showToast('Please select a photo first.', 2000);
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ profile_photo: selectedProfilePhotoData })
+        .eq('username', sessionData.username);
+      if (error) throw error;
+      showToast('✅ Profile photo uploaded successfully!', 2000);
+      // Optionally clear the preview
+      clearProfilePhotoData();
+    } catch (err) {
+      console.error(err);
+      showToast('Error uploading photo: ' + err.message, 3000);
+    }
+  }
+
+  profilePhotoInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleProfilePhotoSelect(e.target.files[0]);
+    } else {
+      clearProfilePhotoData();
+    }
+  });
+  clearProfilePhoto.addEventListener('click', clearProfilePhotoData);
+  uploadProfilePhotoBtn.addEventListener('click', uploadProfilePhoto);
+
+  // ─── Decryption utilities ──────────────────────────────────────
   function formatTime(ts) { return new Date(ts).toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
   function arrayBufferToBase64(buf) { const bytes = new Uint8Array(buf); let binary=''; for (let i=0;i<bytes.length;i++) binary += String.fromCharCode(bytes[i]); return btoa(binary); }
   function base64ToArrayBuffer(base64) { const binary=atob(base64); const bytes=new Uint8Array(binary.length); for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i); return bytes.buffer; }
@@ -163,13 +244,18 @@
     } catch { return null; }
   }
 
+  // ─── Render received messages ──────────────────────────────────
   async function renderReceivedMessages() {
-    if (!receiverKey) {
-      receivedList.innerHTML = `<div class="empty-state"><div class="icon">🔑</div><p>Set the decryption passphrase first.</p></div>`;
+    // If no key, show message, but we removed the key input. So we'll use a fixed key like sender.
+    const DEFAULT_PASSPHRASE = 'my-secure-shared-secret'; // must match sender
+    try {
+      receiverKey = await deriveKey(DEFAULT_PASSPHRASE);
+    } catch(e) {
+      showToast('Error deriving key', 2000);
       return;
     }
+
     try {
-      // Fetch messages where receiver_username matches the logged-in user
       const { data, error } = await supabase
         .from('messages')
         .select('*')
@@ -191,6 +277,7 @@
           const dec = await decryptMessage(receiverKey, m.text);
           if (dec !== null) { decryptedText = dec; decryptedOk = true; } else anyError = true;
         } else { decryptedText = ''; decryptedOk = true; }
+        // If image is present, show it
         const hasImage = m.image && m.image.length > 0;
         let imageSrc = hasImage ? `data:image/jpeg;base64,${m.image}` : null;
         html += `<div class="message-item">
@@ -201,30 +288,18 @@
         </div>`;
       }
       receivedList.innerHTML = html;
-      if (anyError) showToast('Some messages could not be decrypted. Check your passphrase.', 3000);
+      if (anyError) showToast('Some messages could not be decrypted. Check passphrase.', 3000);
     } catch(err) { console.error(err); showToast('Error loading messages: ' + err.message, 3000); }
   }
 
-  async function setKey() {
-    const pass = receiverPass.value.trim();
-    if (!pass) { showToast('Please enter a passphrase.', 2000); return; }
-    try {
-      receiverKey = await deriveKey(pass);
-      keyStatus.innerHTML = `<span class="dot green"></span> Key set (AES-256)`;
-      showToast('✅ Receiver key set successfully.', 2000);
-      await renderReceivedMessages();
-    } catch(e) { showToast('❌ Failed to derive key.', 2000); console.error(e); }
-  }
-
-  // ─── Event listeners ─────────────────────────────────────────────
-  setKeyBtn.addEventListener('click', setKey);
-  receiverPass.addEventListener('keydown', (e) => { if (e.key === 'Enter') setKey(); });
   refreshBtn.addEventListener('click', async () => {
-    if (receiverKey) { await renderReceivedMessages(); showToast('Inbox refreshed.', 1200); }
-    else showToast('Set decryption key first.', 2000);
+    await renderReceivedMessages();
+    showToast('Inbox refreshed.', 1200);
   });
 
-  showToast('🔐 Set the shared passphrase to decrypt messages.', 3000);
+  // ─── Initial load ──────────────────────────────────────────────
+  renderReceivedMessages();
+  showToast('📥 Your inbox. Upload a profile photo if you like.', 3000);
 })();
 </script>
 </body>
