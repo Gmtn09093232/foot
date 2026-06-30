@@ -36,7 +36,6 @@
   <div class="card">
     <div class="supabase-config">⚙️ Connected to Supabase via <code>{{SUPABASE_URL}}</code></div>
     <div id="authForm">
-      <!-- Login fields (always visible) -->
       <div id="loginFields">
         <div class="form-group">
           <label for="authUsername">Username</label>
@@ -47,7 +46,6 @@
           <input type="password" id="authPassword" placeholder="Enter password" />
         </div>
       </div>
-      <!-- Extra fields for registration -->
       <div id="registerFields" style="display:none;">
         <div class="form-group">
           <label for="authPhone">Phone Number</label>
@@ -78,30 +76,27 @@
   const SUPABASE_URL = '{{SUPABASE_URL}}';
   const SUPABASE_ANON_KEY = '{{SUPABASE_ANON_KEY}}';
 
-  // ─── Check if Supabase library loaded ──────────────────────────
   if (typeof window.supabase === 'undefined') {
-    document.getElementById('toast').textContent = '❌ Supabase library not loaded. Check internet connection.';
+    document.getElementById('toast').textContent = '❌ Supabase library not loaded. Check internet.';
     document.getElementById('toast').classList.add('show');
     console.error('Supabase library not loaded.');
     return;
   }
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // DOM refs
   const authUsername = document.getElementById('authUsername');
   const authPassword = document.getElementById('authPassword');
   const authPhone = document.getElementById('authPhone');
   const authEmail = document.getElementById('authEmail');
   const authSubmitBtn = document.getElementById('authSubmitBtn');
   const authToggleText = document.getElementById('authToggleText');
-  const authToggleLink = document.getElementById('authToggleLink');
   const loginFields = document.getElementById('loginFields');
   const registerFields = document.getElementById('registerFields');
   const toast = document.getElementById('toast');
 
   let isLoginMode = true;
 
-  function showToast(msg, duration=2800) {
+  function showToast(msg, duration = 2800) {
     toast.textContent = msg;
     toast.classList.add('show');
     clearTimeout(toast._timer);
@@ -132,7 +127,6 @@
         toggleAuthMode();
       });
     }
-    // Clear fields
     authUsername.value = '';
     authPassword.value = '';
     authPhone.value = '';
@@ -141,9 +135,7 @@
 
   function getSelectedRole() {
     const radios = document.querySelectorAll('input[name="role"]');
-    for (let r of radios) {
-      if (r.checked) return r.value;
-    }
+    for (let r of radios) if (r.checked) return r.value;
     return 'sender';
   }
 
@@ -157,7 +149,6 @@
 
     try {
       if (isLoginMode) {
-        // Login
         const { data, error } = await supabase
           .from('users')
           .select('username, role')
@@ -166,7 +157,6 @@
           .maybeSingle();
         if (error) throw error;
         if (data) {
-          // Store session and redirect based on role
           localStorage.setItem('secure_session', JSON.stringify({ username: data.username, role: data.role }));
           showToast(`Welcome back, ${username}!`, 1500);
           setTimeout(() => {
@@ -176,7 +166,6 @@
           showToast('Invalid username or password.', 2000);
         }
       } else {
-        // Registration
         const phone = authPhone.value.trim();
         const email = authEmail.value.trim();
         if (!phone || !email) {
@@ -201,17 +190,15 @@
         }, 1000);
       }
     } catch (err) {
-      console.error('Auth error:', err);
+      console.error(err);
       showToast('Error: ' + err.message, 3000);
     }
   }
 
-  // ─── Event listeners ─────────────────────────────────────────────
   authSubmitBtn.addEventListener('click', handleAuth);
   authUsername.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAuth(); });
   authPassword.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAuth(); });
 
-  // Initial render
   renderAuthForm();
 })();
 </script>
