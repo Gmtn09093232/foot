@@ -93,7 +93,7 @@
         </div>
         <button class="btn btn-primary btn-block" id="authSubmitBtn">Login</button>
         <div class="auth-toggle">
-          <span id="authToggleText">Don't have an account? <a id="authToggleLink">Register</a></span>
+          <span id="authToggleText"></span>
         </div>
       </div>
     </div>
@@ -152,7 +152,6 @@
   const authEmail = document.getElementById('authEmail');
   const authSubmitBtn = document.getElementById('authSubmitBtn');
   const authToggleText = document.getElementById('authToggleText');
-  const authToggleLink = document.getElementById('authToggleLink');
   const loginFields = document.getElementById('loginFields');
   const registerFields = document.getElementById('registerFields');
   const loggedInUser = document.getElementById('loggedInUser');
@@ -180,22 +179,34 @@
     toast._timer = setTimeout(() => toast.classList.remove('show'), duration);
   }
 
+  // ─── Toggle between Login and Register modes ──────────────────
+  function toggleAuthMode() {
+    isLoginMode = !isLoginMode;
+    renderAuthForm();
+  }
+
+  // ─── Render auth form based on current mode ──────────────────
   function renderAuthForm() {
     if (isLoginMode) {
       authSubmitBtn.textContent = 'Login';
-      authToggleText.innerHTML = `Don't have an account? <a id="authToggleLink">Register</a>`;
+      authToggleText.innerHTML = `Don't have an account? <a href="#" id="authToggleLink">Register</a>`;
       loginFields.style.display = 'block';
       registerFields.style.display = 'none';
     } else {
       authSubmitBtn.textContent = 'Register';
-      authToggleText.innerHTML = `Already have an account? <a id="authToggleLink">Login</a>`;
+      authToggleText.innerHTML = `Already have an account? <a href="#" id="authToggleLink">Login</a>`;
       loginFields.style.display = 'block';
       registerFields.style.display = 'block';
     }
-    document.getElementById('authToggleLink').addEventListener('click', (e) => {
-      e.preventDefault(); isLoginMode = !isLoginMode; renderAuthForm();
-    });
-    // clear fields
+    // Attach event listener to the toggle link (re-created each time)
+    const link = document.getElementById('authToggleLink');
+    if (link) {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleAuthMode();
+      });
+    }
+    // Clear fields
     authUsername.value = '';
     authPassword.value = '';
     authPhone.value = '';
