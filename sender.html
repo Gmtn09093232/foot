@@ -14,8 +14,8 @@
     .card-title { font-size: 15px; font-weight: 600; color: #1e2f40; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
     .form-group { margin-bottom: 16px; }
     label { display: block; font-size: 13px; font-weight: 500; color: #2c3f54; margin-bottom: 4px; }
-    input, textarea { width: 100%; padding: 12px 16px; border: 1.5px solid #dde3ea; border-radius: 14px; font-size: 14px; font-family: inherit; background: #fff; transition: border 0.2s, box-shadow 0.2s; color: #0b1a2f; }
-    input:focus, textarea:focus { outline: none; border-color: #0b1a2f; box-shadow: 0 0 0 4px rgba(11,26,47,0.08); }
+    input, textarea, select { width: 100%; padding: 12px 16px; border: 1.5px solid #dde3ea; border-radius: 14px; font-size: 14px; font-family: inherit; background: #fff; transition: border 0.2s, box-shadow 0.2s; color: #0b1a2f; }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: #0b1a2f; box-shadow: 0 0 0 4px rgba(11,26,47,0.08); }
     textarea { resize: vertical; min-height: 90px; }
     .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 28px; border: none; border-radius: 30px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
     .btn-primary { background: #0b1a2f; color: #fff; }
@@ -69,6 +69,16 @@
     <div class="user-info">
       <span id="loggedInUser"></span>
       <button class="btn btn-danger btn-sm" id="logoutBtn">Logout</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📨 Select Receiver</div>
+    <div class="form-group">
+      <label for="receiverSelect">Choose a receiver</label>
+      <select id="receiverSelect">
+        <option value="">-- Loading receivers --</option>
+      </select>
     </div>
   </div>
 
@@ -147,6 +157,7 @@
   // DOM refs
   const loggedInUser = document.getElementById('loggedInUser');
   const logoutBtn = document.getElementById('logoutBtn');
+  const receiverSelect = document.getElementById('receiverSelect');
   const senderPass = document.getElementById('senderPass');
   const setKeyBtn = document.getElementById('setKeyBtn');
   const keyStatus = document.getElementById('keyStatus');
@@ -178,6 +189,31 @@
     window.location.href = '/login';
   }
   logoutBtn.addEventListener('click', logout);
+
+  // ─── Load receivers (users with role='receiver') ──────────────
+  async function loadReceivers() {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('username')
+        .eq('role', 'receiver');
+      if (error) throw error;
+      receiverSelect.innerHTML = '<option value="">Select a receiver</option>';
+      if (data && data.length > 0) {
+        data.forEach(user => {
+          const option = document.createElement('option');
+          option.value = user.username;
+          option.textContent = user.username;
+          receiverSelect.appendChild(option);
+        });
+      } else {
+        receiverSelect.innerHTML = '<option value="">No receivers found</option>';
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error loading receivers: ' + err.message, 3000);
+    }
+  }
 
   // ─── Encryption utilities ──────────────────────────────────
   function formatTime(ts) { return new Date(ts).toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
@@ -216,7 +252,12 @@
 
   async function renderSentMessages() {
     try {
-      const { data, error } = await supabase.from('messages').select('*').eq('role', 'sender').order('timestamp', { ascending: false });
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('role', 'sender')
+        .eq('sender_username', sessionData.username) // optional: you could filter by sender
+        .order('timestamp', { ascending: false });
       if (error) throw error;
       if (!data || data.length === 0) { sentList.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>No messages sent yet.</p></div>`; return; }
       const msgs = data.slice().reverse();
@@ -224,7 +265,7 @@
       for (const m of msgs) {
         const hasImage = m.image && m.image.length > 0;
         html += `<div class="message-item">
-          <div class="message-meta"><span class="from">📤 You sent</span><span class="time">${formatTime(m.timestamp)}</span></div>
+          <div class="message-meta"><span class="from">📤 To: ${m.receiver_username || 'Unknown'}</span><span class="time">${formatTime(m.timestamp)}</span></div>
           <div class="message-text">${escapeHtml(m.text || '')}</div>
           ${hasImage ? `<div class="message-image"><img src="data:image/jpeg;base64,${m.image}" alt="sent image" /></div>` : ''}
           <div style="margin-top:8px;font-size:12px;color:#7b8fa0;">🔒 encrypted</div>
@@ -246,18 +287,27 @@
 
   async function sendMessage() {
     if (!senderKey) { showToast('❌ Set encryption key first.', 2500); return; }
+    const receiver = receiverSelect.value;
+    if (!receiver) { showToast('Please select a receiver.', 2000); return; }
     const text = msgText.value.trim();
     if (!text && !currentImageData) { showToast('Please enter text or attach an image.', 2000); return; }
     let encryptedText = '';
     if (text) {
       try { encryptedText = await encryptMessage(senderKey, text); } catch(e) { showToast('❌ Encryption failed.', 2000); console.error(e); return; }
     }
-    const newMsg = { text: encryptedText, image: currentImageData || '', timestamp: Date.now(), role: 'sender' };
+    const newMsg = {
+      text: encryptedText,
+      image: currentImageData || '',
+      timestamp: Date.now(),
+      role: 'sender',
+      receiver_username: receiver,
+      sender_username: sessionData.username
+    };
     try {
       const { error } = await supabase.from('messages').insert([newMsg]);
       if (error) throw error;
       msgText.value = ''; clearImageData();
-      showToast('📨 Message sent securely!', 2000);
+      showToast(`📨 Message sent to ${receiver}!`, 2000);
       await renderSentMessages();
     } catch(err) { console.error(err); showToast('Error sending message: ' + err.message, 3000); }
   }
@@ -265,7 +315,11 @@
   async function clearSent() {
     if (!confirm('Delete all sent messages?')) return;
     try {
-      const { error } = await supabase.from('messages').delete().eq('role', 'sender');
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('role', 'sender')
+        .eq('sender_username', sessionData.username);
       if (error) throw error;
       await renderSentMessages();
       showToast('Sent messages cleared.', 1500);
@@ -281,8 +335,10 @@
   clearImage.addEventListener('click', clearImageData);
   clearSentBtn.addEventListener('click', clearSent);
 
+  // ─── Initial load ─────────────────────────────────────────────
+  loadReceivers();
   renderSentMessages();
-  showToast('🔐 Set a passphrase to start sending.', 3000);
+  showToast('🔐 Set a passphrase and select a receiver to start.', 3000);
 })();
 </script>
 </body>
