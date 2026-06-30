@@ -45,10 +45,6 @@
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .user-info { display: flex; align-items: center; gap: 12px; }
     .user-info span { font-size: 14px; font-weight: 500; color: #1e2f40; }
-    .receiver-avatar { display: inline-block; width: 30px; height: 30px; border-radius: 50%; background: #ddd; margin-right: 8px; vertical-align: middle; overflow: hidden; }
-    .receiver-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .receiver-select-wrapper { display: flex; align-items: center; gap: 12px; }
-    #receiverSelect { flex: 1; }
   </style>
 </head>
 <body>
@@ -65,14 +61,9 @@
     <div class="card-title">📨 Select Receiver</div>
     <div class="form-group">
       <label for="receiverSelect">Choose a receiver</label>
-      <div class="receiver-select-wrapper">
-        <select id="receiverSelect">
-          <option value="">-- Loading receivers --</option>
-        </select>
-        <div id="receiverAvatar" class="receiver-avatar" style="display:none;">
-          <img id="receiverAvatarImg" src="" alt="avatar" />
-        </div>
-      </div>
+      <select id="receiverSelect">
+        <option value="">-- Loading receivers --</option>
+      </select>
     </div>
   </div>
 
@@ -130,8 +121,6 @@
   const loggedInUser = document.getElementById('loggedInUser');
   const logoutBtn = document.getElementById('logoutBtn');
   const receiverSelect = document.getElementById('receiverSelect');
-  const receiverAvatar = document.getElementById('receiverAvatar');
-  const receiverAvatarImg = document.getElementById('receiverAvatarImg');
   const msgText = document.getElementById('msgText');
   const sendBtn = document.getElementById('sendBtn');
   const sentList = document.getElementById('sentList');
@@ -153,12 +142,12 @@
   }
   logoutBtn.addEventListener('click', logout);
 
-  // ─── Load receivers with profile photos ──────────────────────
+  // ─── Load receivers ──────────────────────────────────────────────
   async function loadReceivers() {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('username, profile_photo')
+        .select('username')
         .eq('role', 'receiver');
       if (error) throw error;
       receiverSelect.innerHTML = '<option value="">Select a receiver</option>';
@@ -167,28 +156,13 @@
           const option = document.createElement('option');
           option.value = user.username;
           option.textContent = user.username;
-          if (user.profile_photo) {
-            option.dataset.photo = `data:image/jpeg;base64,${user.profile_photo}`;
-          }
           receiverSelect.appendChild(option);
-        });
-        // Show avatar when selection changes
-        receiverSelect.addEventListener('change', function() {
-          const selected = this.options[this.selectedIndex];
-          const photoData = selected.dataset.photo;
-          if (photoData) {
-            receiverAvatar.style.display = 'inline-block';
-            receiverAvatarImg.src = photoData;
-          } else {
-            receiverAvatar.style.display = 'none';
-            receiverAvatarImg.src = '';
-          }
         });
       } else {
         receiverSelect.innerHTML = '<option value="">No receivers found</option>';
       }
     } catch (err) {
-      console.error(err);
+      console.error('Error loading receivers:', err);
       showToast('Error loading receivers: ' + err.message, 3000);
     }
   }
@@ -269,7 +243,7 @@
       }
       sentList.innerHTML = html;
     } catch (err) {
-      console.error(err);
+      console.error('Error rendering sent messages:', err);
       showToast('Error loading messages: ' + err.message, 3000);
     }
   }
@@ -288,6 +262,7 @@
     }
 
     try {
+      // Derive key
       const key = await deriveKey(DEFAULT_PASSPHRASE);
       const encryptedText = await encryptMessage(key, text);
 
@@ -300,13 +275,25 @@
         sender_username: sessionData.username
       };
 
-      const { error } = await supabase.from('messages').insert([newMsg]);
-      if (error) throw error;
+      console.log('Inserting message:', newMsg);
+
+      const { data, error } = await supabase
+        .from('messages')
+        .insert([newMsg])
+        .select();
+
+      if (error) {
+        console.error('Supabase insert error:', error);
+        showToast('Error sending message: ' + error.message, 3000);
+        return;
+      }
+
+      console.log('Insert successful:', data);
       msgText.value = '';
       showToast(`📨 Message sent to ${receiver}!`, 2000);
       await renderSentMessages();
     } catch (err) {
-      console.error(err);
+      console.error('Error in sendMessage:', err);
       showToast('Error sending message: ' + err.message, 3000);
     }
   }
@@ -324,7 +311,7 @@
       await renderSentMessages();
       showToast('Sent messages cleared.', 1500);
     } catch (err) {
-      console.error(err);
+      console.error('Error clearing messages:', err);
       showToast('Error clearing messages: ' + err.message, 3000);
     }
   }
