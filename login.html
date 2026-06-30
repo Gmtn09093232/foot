@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🔐 Login – Secure Exchange</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+    .app { width: 100%; max-width: 450px; background: #ffffff; border-radius: 32px; box-shadow: 0 20px 60px rgba(0,20,40,0.12); padding: 28px 32px 32px; }
+    h1 { font-size: 24px; font-weight: 700; color: #0b1a2f; margin-bottom: 24px; border-bottom: 2px solid #eef2f6; padding-bottom: 16px; text-align: center; }
+    .card { background: #f8fafc; border-radius: 20px; padding: 24px 28px; border: 1px solid #eef2f6; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 13px; font-weight: 500; color: #2c3f54; margin-bottom: 4px; }
+    input { width: 100%; padding: 12px 16px; border: 1.5px solid #dde3ea; border-radius: 14px; font-size: 14px; font-family: inherit; background: #fff; transition: border 0.2s, box-shadow 0.2s; color: #0b1a2f; }
+    input:focus { outline: none; border-color: #0b1a2f; box-shadow: 0 0 0 4px rgba(11,26,47,0.08); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 28px; border: none; border-radius: 30px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: inherit; width: 100%; }
+    .btn-primary { background: #0b1a2f; color: #fff; }
+    .btn-primary:hover { background: #1a2f47; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(11,26,47,0.25); }
+    .auth-toggle { text-align: center; margin-top: 12px; font-size: 14px; color: #5b6f82; }
+    .auth-toggle a { color: #0b1a2f; font-weight: 600; cursor: pointer; text-decoration: underline; }
+    .auth-toggle a:hover { color: #1a2f47; }
+    .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #0b1a2f; color: #fff; padding: 14px 32px; border-radius: 40px; font-weight: 500; font-size: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.25); opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none; z-index: 999; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .supabase-config { background: #f1f5f9; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; font-size: 13px; color: #1e2f40; text-align: center; }
+    .supabase-config code { background: #e2e8f0; padding: 2px 8px; border-radius: 6px; font-size: 12px; }
+    .role-selector { margin: 12px 0; text-align: center; }
+    .role-selector label { display: inline-block; margin: 0 12px; font-weight: normal; }
+    .role-selector input { width: auto; margin-right: 4px; }
+    @media (max-width: 640px) { .app { padding: 16px; border-radius: 20px; } .card { padding: 16px 18px; } }
+  </style>
+</head>
+<body>
+<div class="app">
+  <h1>🔐 Secure Exchange</h1>
+  <div class="card">
+    <div class="supabase-config">⚙️ Connected to Supabase via <code>{{SUPABASE_URL}}</code></div>
+    <div id="authForm">
+      <!-- Login fields (always visible) -->
+      <div id="loginFields">
+        <div class="form-group">
+          <label for="authUsername">Username</label>
+          <input type="text" id="authUsername" placeholder="Enter username" />
+        </div>
+        <div class="form-group">
+          <label for="authPassword">Password</label>
+          <input type="password" id="authPassword" placeholder="Enter password" />
+        </div>
+      </div>
+      <!-- Extra fields for registration -->
+      <div id="registerFields" style="display:none;">
+        <div class="form-group">
+          <label for="authPhone">Phone Number</label>
+          <input type="text" id="authPhone" placeholder="e.g., +1234567890" />
+        </div>
+        <div class="form-group">
+          <label for="authEmail">Email</label>
+          <input type="email" id="authEmail" placeholder="you@example.com" />
+        </div>
+        <div class="role-selector">
+          <label><input type="radio" name="role" value="sender" checked /> Sender (User 2)</label>
+          <label><input type="radio" name="role" value="receiver" /> Receiver (User 1)</label>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="authSubmitBtn">Login</button>
+      <div class="auth-toggle">
+        <span id="authToggleText">Don't have an account? <a href="#" id="authToggleLink">Register</a></span>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function() {
+  'use strict';
+  const SUPABASE_URL = '{{SUPABASE_URL}}';
+  const SUPABASE_ANON_KEY = '{{SUPABASE_ANON_KEY}}';
+  const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // DOM refs
+  const authUsername = document.getElementById('authUsername');
+  const authPassword = document.getElementById('authPassword');
+  const authPhone = document.getElementById('authPhone');
+  const authEmail = document.getElementById('authEmail');
+  const authSubmitBtn = document.getElementById('authSubmitBtn');
+  const authToggleText = document.getElementById('authToggleText');
+  const authToggleLink = document.getElementById('authToggleLink');
+  const loginFields = document.getElementById('loginFields');
+  const registerFields = document.getElementById('registerFields');
+  const toast = document.getElementById('toast');
+
+  let isLoginMode = true;
+
+  function showToast(msg, duration=2800) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.classList.remove('show'), duration);
+  }
+
+  function toggleAuthMode() {
+    isLoginMode = !isLoginMode;
+    renderAuthForm();
+  }
+
+  function renderAuthForm() {
+    if (isLoginMode) {
+      authSubmitBtn.textContent = 'Login';
+      authToggleText.innerHTML = `Don't have an account? <a href="#" id="authToggleLink">Register</a>`;
+      loginFields.style.display = 'block';
+      registerFields.style.display = 'none';
+    } else {
+      authSubmitBtn.textContent = 'Register';
+      authToggleText.innerHTML = `Already have an account? <a href="#" id="authToggleLink">Login</a>`;
+      loginFields.style.display = 'block';
+      registerFields.style.display = 'block';
+    }
+    const link = document.getElementById('authToggleLink');
+    if (link) {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleAuthMode();
+      });
+    }
+    // Clear fields
+    authUsername.value = '';
+    authPassword.value = '';
+    authPhone.value = '';
+    authEmail.value = '';
+  }
+
+  function getSelectedRole() {
+    const radios = document.querySelectorAll('input[name="role"]');
+    for (let r of radios) {
+      if (r.checked) return r.value;
+    }
+    return 'sender';
+  }
+
+  async function handleAuth() {
+    const username = authUsername.value.trim();
+    const password = authPassword.value.trim();
+    if (!username || !password) {
+      showToast('Please fill in username and password.', 2000);
+      return;
+    }
+
+    try {
+      if (isLoginMode) {
+        // Login
+        const { data, error } = await supabase
+          .from('users')
+          .select('username, role')
+          .eq('username', username)
+          .eq('password', password)
+          .maybeSingle();
+        if (error) throw error;
+        if (data) {
+          // Store session and redirect based on role
+          localStorage.setItem('secure_session', JSON.stringify({ username: data.username, role: data.role }));
+          showToast(`Welcome back, ${username}!`, 1500);
+          setTimeout(() => {
+            window.location.href = data.role === 'sender' ? '/sender' : '/receiver';
+          }, 1000);
+        } else {
+          showToast('Invalid username or password.', 2000);
+        }
+      } else {
+        // Registration
+        const phone = authPhone.value.trim();
+        const email = authEmail.value.trim();
+        if (!phone || !email) {
+          showToast('Please fill in phone and email.', 2000);
+          return;
+        }
+        const role = getSelectedRole();
+        const { data, error } = await supabase
+          .from('users')
+          .insert([{ username, password, role, phone, email }])
+          .select('username, role')
+          .maybeSingle();
+        if (error) {
+          if (error.code === '23505') showToast('Username already exists.', 2000);
+          else throw error;
+          return;
+        }
+        localStorage.setItem('secure_session', JSON.stringify({ username: data.username, role: data.role }));
+        showToast(`Account created! Welcome, ${username}`, 1500);
+        setTimeout(() => {
+          window.location.href = data.role === 'sender' ? '/sender' : '/receiver';
+        }, 1000);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error: ' + err.message, 3000);
+    }
+  }
+
+  // ─── Event listeners ─────────────────────────────────────────────
+  authSubmitBtn.addEventListener('click', handleAuth);
+  authUsername.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAuth(); });
+  authPassword.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAuth(); });
+
+  // Initial render
+  renderAuthForm();
+})();
+</script>
+</body>
+</html>
