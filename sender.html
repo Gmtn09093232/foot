@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>📤 Sender – Secure Exchange</title>
+  <title>📥 Receiver – Secure Exchange</title>
   <style>
-    /* Same styles as before – keep them */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
     .app { width: 100%; max-width: 700px; background: #ffffff; border-radius: 32px; box-shadow: 0 20px 60px rgba(0,20,40,0.12); padding: 28px 32px 32px; }
@@ -34,15 +33,6 @@
     .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
     .dot.green { background: #2b8a4a; }
     .dot.red { background: #b13a3a; }
-    .file-upload-wrap { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 12px 16px; background: #fff; border: 1.5px dashed #dde3ea; border-radius: 14px; transition: border 0.2s; }
-    .file-upload-wrap:hover { border-color: #0b1a2f; }
-    .file-upload-wrap input[type="file"] { display: none; }
-    .file-label { display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; background: #eef2f6; border-radius: 30px; font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s; color: #1e2f40; }
-    .file-label:hover { background: #dce3ec; }
-    .file-name { font-size: 13px; color: #5b6f82; flex: 1; min-width: 80px; }
-    .clear-file { background: none; border: none; color: #b13a3a; font-size: 18px; cursor: pointer; padding: 0 6px; font-weight: 600; }
-    .file-preview { margin-top: 12px; max-width: 160px; border-radius: 14px; border: 1px solid #eef2f6; overflow: hidden; }
-    .file-preview img { width: 100%; height: auto; display: block; }
     .message-list { display: flex; flex-direction: column; gap: 14px; max-height: 460px; overflow-y: auto; padding-right: 4px; }
     .message-list::-webkit-scrollbar { width: 6px; }
     .message-list::-webkit-scrollbar-track { background: #eef2f6; border-radius: 10px; }
@@ -75,11 +65,11 @@
 <div class="app">
   <!-- AUTH SECTION -->
   <div id="authContainer" class="auth-container">
-    <h1>🔐 Sender Login</h1>
+    <h1>🔐 Receiver Login</h1>
     <div class="card">
       <div class="supabase-config">⚙️ Connected to Supabase via <code>{{SUPABASE_URL}}</code></div>
       <div id="authForm">
-        <!-- Login / Registration toggle -->
+        <!-- Login fields (always visible) -->
         <div id="loginFields">
           <div class="form-group">
             <label for="authUsername">Username</label>
@@ -112,7 +102,7 @@
   <!-- MAIN APP -->
   <div id="mainContainer" class="main-container">
     <div class="flex-between" style="margin-bottom:16px;">
-      <h1 style="border:none;padding:0;margin:0;">📤 Secure Sender <small>User 2</small></h1>
+      <h1 style="border:none;padding:0;margin:0;">📥 Secure Receiver <small>User 1</small></h1>
       <div class="user-info">
         <span id="loggedInUser"></span>
         <button class="btn btn-danger btn-sm" id="logoutBtn">Logout</button>
@@ -120,45 +110,24 @@
     </div>
 
     <div class="card">
-      <div class="card-title">🔑 Encryption Passphrase</div>
+      <div class="card-title">🔑 Decryption Passphrase</div>
       <div class="form-group">
-        <label for="senderPass">Shared secret passphrase</label>
-        <input type="password" id="senderPass" placeholder="Enter the shared passphrase..." />
+        <label for="receiverPass">Shared secret passphrase</label>
+        <input type="password" id="receiverPass" placeholder="Enter the shared passphrase..." />
       </div>
-      <button class="btn btn-secondary btn-block" id="setKeyBtn">Set Encryption Key</button>
+      <button class="btn btn-secondary btn-block" id="setKeyBtn">Set Decryption Key</button>
       <div class="flex" style="margin-top:8px;">
         <span class="enc-status" id="keyStatus"><span class="dot red"></span> No key set</span>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">✏️ Compose Message</div>
-      <div class="form-group">
-        <label for="msgText">Message text</label>
-        <textarea id="msgText" placeholder="Write your secure message…"></textarea>
-      </div>
-      <div class="form-group">
-        <label>Attach image (optional)</label>
-        <div class="file-upload-wrap">
-          <label class="file-label" for="imageInput">📎 Choose image</label>
-          <input type="file" id="imageInput" accept="image/*" />
-          <span class="file-name" id="fileName">No image selected</span>
-          <button class="clear-file" id="clearImage" title="Remove image">✕</button>
-        </div>
-        <div id="imagePreviewContainer" class="file-preview" style="display:none;">
-          <img id="imagePreview" src="" alt="preview" />
-        </div>
-      </div>
-      <button class="btn btn-primary btn-block" id="sendBtn">📨 Send Message</button>
-    </div>
-
-    <div class="card">
       <div class="flex-between">
-        <div class="card-title" style="margin-bottom:0;">📤 Messages Sent</div>
-        <button class="btn btn-secondary btn-sm" id="clearSentBtn">Clear all</button>
+        <div class="card-title" style="margin-bottom:0;">📥 Received Messages</div>
+        <button class="btn btn-primary btn-sm" id="refreshBtn">🔄 Refresh</button>
       </div>
-      <div id="sentList" class="message-list mt-16">
-        <div class="empty-state"><div class="icon">📭</div><p>No messages sent yet.</p></div>
+      <div id="receivedList" class="message-list mt-16">
+        <div class="empty-state"><div class="icon">📭</div><p>No messages received yet.<br />Ask User 2 to send one.</p></div>
       </div>
     </div>
   </div>
@@ -172,7 +141,7 @@
   const SUPABASE_URL = '{{SUPABASE_URL}}';
   const SUPABASE_ANON_KEY = '{{SUPABASE_ANON_KEY}}';
   const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const SESSION_KEY = 'sender_session';
+  const SESSION_KEY = 'receiver_session';
 
   // DOM refs
   const authContainer = document.getElementById('authContainer');
@@ -188,23 +157,15 @@
   const registerFields = document.getElementById('registerFields');
   const loggedInUser = document.getElementById('loggedInUser');
   const logoutBtn = document.getElementById('logoutBtn');
-  const senderPass = document.getElementById('senderPass');
+  const receiverPass = document.getElementById('receiverPass');
   const setKeyBtn = document.getElementById('setKeyBtn');
   const keyStatus = document.getElementById('keyStatus');
-  const msgText = document.getElementById('msgText');
-  const imageInput = document.getElementById('imageInput');
-  const fileName = document.getElementById('fileName');
-  const clearImage = document.getElementById('clearImage');
-  const imagePreviewContainer = document.getElementById('imagePreviewContainer');
-  const imagePreview = document.getElementById('imagePreview');
-  const sendBtn = document.getElementById('sendBtn');
-  const sentList = document.getElementById('sentList');
-  const clearSentBtn = document.getElementById('clearSentBtn');
+  const receivedList = document.getElementById('receivedList');
+  const refreshBtn = document.getElementById('refreshBtn');
   const toast = document.getElementById('toast');
 
   let isLoginMode = true;
-  let senderKey = null;
-  let currentImageData = null;
+  let receiverKey = null;
   let currentUser = null;
 
   function getSession() { return localStorage.getItem(SESSION_KEY) || null; }
@@ -274,7 +235,7 @@
         }
         const { error } = await supabase
           .from('users')
-          .insert([{ username, password, role: 'sender', phone, email }]);
+          .insert([{ username, password, role: 'receiver', phone, email }]);
         if (error) {
           if (error.code === '23505') showToast('Username already exists.', 2000);
           else throw error;
@@ -291,7 +252,7 @@
     }
   }
 
-  function logout() { clearSession(); currentUser = null; senderKey = null; keyStatus.innerHTML = `<span class="dot red"></span> No key set`; showMainApp(); showToast('Logged out.', 1500); }
+  function logout() { clearSession(); currentUser = null; receiverKey = null; keyStatus.innerHTML = `<span class="dot red"></span> No key set`; showMainApp(); showToast('Logged out.', 1500); }
 
   function showMainApp() {
     if (isLoggedIn()) {
@@ -299,9 +260,9 @@
       mainContainer.style.display = 'block';
       currentUser = getSession();
       loggedInUser.textContent = `👤 ${currentUser}`;
-      senderKey = null;
+      receiverKey = null;
       keyStatus.innerHTML = `<span class="dot red"></span> No key set`;
-      renderSentMessages();
+      renderReceivedMessages();
     } else {
       authContainer.style.display = 'block';
       mainContainer.style.display = 'none';
@@ -309,7 +270,7 @@
     }
   }
 
-  // ─── Message and encryption functions (same as before) ───
+  // ─── Message and decryption functions ──────────────────────────
   function formatTime(ts) { return new Date(ts).toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
   function arrayBufferToBase64(buf) { const bytes = new Uint8Array(buf); let binary=''; for (let i=0;i<bytes.length;i++) binary += String.fromCharCode(bytes[i]); return btoa(binary); }
   function base64ToArrayBuffer(base64) { const binary=atob(base64); const bytes=new Uint8Array(binary.length); for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i); return bytes.buffer; }
@@ -319,87 +280,63 @@
     const enc = new TextEncoder();
     const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
     return crypto.subtle.deriveKey({ name:'PBKDF2', salt: enc.encode('SecureExchangeSalt2026'), iterations: 100000, hash:'SHA-256' },
-      keyMaterial, { name:'AES-GCM', length:256 }, false, ['encrypt', 'decrypt']);
+      keyMaterial, { name:'AES-GCM', length:256 }, false, ['decrypt']);
   }
-  async function encryptMessage(key, plaintext) {
-    const enc = new TextEncoder();
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const encrypted = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, key, enc.encode(plaintext));
-    const combined = new Uint8Array(iv.length + encrypted.byteLength);
-    combined.set(iv,0); combined.set(new Uint8Array(encrypted), iv.length);
-    return arrayBufferToBase64(combined.buffer);
-  }
-
-  function fileToBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]); reader.onerror = reject; reader.readAsDataURL(file); }); }
-  function clearImageData() { currentImageData = null; imageInput.value = ''; fileName.textContent = 'No image selected'; imagePreviewContainer.style.display = 'none'; imagePreview.src = ''; }
-  async function handleImageSelect(file) {
-    if (!file) { clearImageData(); return; }
-    if (!file.type.startsWith('image/')) { showToast('Please select an image file.', 2000); clearImageData(); return; }
+  async function decryptMessage(key, ciphertextB64) {
     try {
-      const b64 = await fileToBase64(file);
-      currentImageData = b64;
-      fileName.textContent = file.name;
-      imagePreview.src = `data:${file.type};base64,${b64}`;
-      imagePreviewContainer.style.display = 'block';
-    } catch(e) { showToast('Failed to read image.', 2000); clearImageData(); }
+      const combined = new Uint8Array(base64ToArrayBuffer(ciphertextB64));
+      const iv = combined.slice(0, 12);
+      const encrypted = combined.slice(12);
+      const decrypted = await crypto.subtle.decrypt({ name:'AES-GCM', iv }, key, encrypted);
+      return new TextDecoder().decode(decrypted);
+    } catch { return null; }
   }
 
-  async function renderSentMessages() {
+  async function renderReceivedMessages() {
+    if (!receiverKey) {
+      receivedList.innerHTML = `<div class="empty-state"><div class="icon">🔑</div><p>Set the decryption passphrase first.</p></div>`;
+      return;
+    }
     try {
       const { data, error } = await supabase.from('messages').select('*').eq('role', 'sender').order('timestamp', { ascending: false });
       if (error) throw error;
-      if (!data || data.length === 0) { sentList.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>No messages sent yet.</p></div>`; return; }
+      if (!data || data.length === 0) {
+        receivedList.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>No messages received yet.<br />Ask User 2 to send one.</p></div>`;
+        return;
+      }
       const msgs = data.slice().reverse();
       let html = '';
+      let anyError = false;
       for (const m of msgs) {
+        let decryptedText = '⚠️ Could not decrypt';
+        let decryptedOk = false;
+        if (m.text) {
+          const dec = await decryptMessage(receiverKey, m.text);
+          if (dec !== null) { decryptedText = dec; decryptedOk = true; } else anyError = true;
+        } else { decryptedText = ''; decryptedOk = true; }
         const hasImage = m.image && m.image.length > 0;
+        let imageSrc = hasImage ? `data:image/jpeg;base64,${m.image}` : null;
         html += `<div class="message-item">
-          <div class="message-meta"><span class="from">📤 You sent</span><span class="time">${formatTime(m.timestamp)}</span></div>
-          <div class="message-text">${escapeHtml(m.text || '')}</div>
-          ${hasImage ? `<div class="message-image"><img src="data:image/jpeg;base64,${m.image}" alt="sent image" /></div>` : ''}
-          <div style="margin-top:8px;font-size:12px;color:#7b8fa0;">🔒 encrypted</div>
+          <div class="message-meta"><span class="from">📥 From User 2</span><span class="time">${formatTime(m.timestamp)}</span></div>
+          <div class="message-text">${escapeHtml(decryptedText)}</div>
+          ${imageSrc ? `<div class="message-image"><img src="${imageSrc}" alt="received image" /></div>` : ''}
+          <div style="margin-top:8px;font-size:12px;color:#7b8fa0;">${decryptedOk ? '🔓 decrypted' : '⚠️ decryption failed'}</div>
         </div>`;
       }
-      sentList.innerHTML = html;
+      receivedList.innerHTML = html;
+      if (anyError) showToast('Some messages could not be decrypted. Check your passphrase.', 3000);
     } catch(err) { console.error(err); showToast('Error loading messages: ' + err.message, 3000); }
   }
 
   async function setKey() {
-    const pass = senderPass.value.trim();
+    const pass = receiverPass.value.trim();
     if (!pass) { showToast('Please enter a passphrase.', 2000); return; }
     try {
-      senderKey = await deriveKey(pass);
+      receiverKey = await deriveKey(pass);
       keyStatus.innerHTML = `<span class="dot green"></span> Key set (AES-256)`;
-      showToast('✅ Sender key set successfully.', 2000);
+      showToast('✅ Receiver key set successfully.', 2000);
+      await renderReceivedMessages();
     } catch(e) { showToast('❌ Failed to derive key.', 2000); console.error(e); }
-  }
-
-  async function sendMessage() {
-    if (!senderKey) { showToast('❌ Set encryption key first.', 2500); return; }
-    const text = msgText.value.trim();
-    if (!text && !currentImageData) { showToast('Please enter text or attach an image.', 2000); return; }
-    let encryptedText = '';
-    if (text) {
-      try { encryptedText = await encryptMessage(senderKey, text); } catch(e) { showToast('❌ Encryption failed.', 2000); console.error(e); return; }
-    }
-    const newMsg = { text: encryptedText, image: currentImageData || '', timestamp: Date.now(), role: 'sender' };
-    try {
-      const { error } = await supabase.from('messages').insert([newMsg]);
-      if (error) throw error;
-      msgText.value = ''; clearImageData();
-      showToast('📨 Message sent securely!', 2000);
-      await renderSentMessages();
-    } catch(err) { console.error(err); showToast('Error sending message: ' + err.message, 3000); }
-  }
-
-  async function clearSent() {
-    if (!confirm('Delete all sent messages?')) return;
-    try {
-      const { error } = await supabase.from('messages').delete().eq('role', 'sender');
-      if (error) throw error;
-      await renderSentMessages();
-      showToast('Sent messages cleared.', 1500);
-    } catch(err) { console.error(err); showToast('Error clearing messages: ' + err.message, 3000); }
   }
 
   // ─── Event listeners ───
@@ -408,15 +345,14 @@
   authPassword.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAuth(); });
   logoutBtn.addEventListener('click', logout);
   setKeyBtn.addEventListener('click', setKey);
-  senderPass.addEventListener('keydown', (e) => { if (e.key === 'Enter') setKey(); });
-  sendBtn.addEventListener('click', sendMessage);
-  msgText.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendMessage(); } });
-  imageInput.addEventListener('change', (e) => { if (e.target.files && e.target.files[0]) handleImageSelect(e.target.files[0]); else clearImageData(); });
-  clearImage.addEventListener('click', clearImageData);
-  clearSentBtn.addEventListener('click', clearSent);
+  receiverPass.addEventListener('keydown', (e) => { if (e.key === 'Enter') setKey(); });
+  refreshBtn.addEventListener('click', async () => {
+    if (receiverKey) { await renderReceivedMessages(); showToast('Inbox refreshed.', 1200); }
+    else showToast('Set decryption key first.', 2000);
+  });
 
   showMainApp();
-  if (isLoggedIn()) { renderSentMessages(); showToast('🔐 Set a passphrase to start sending.', 3000); }
+  if (isLoggedIn()) showToast('🔐 Set the shared passphrase to decrypt messages.', 3000);
 })();
 </script>
 </body>
