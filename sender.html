@@ -1,331 +1,815 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>📤 Sender – Secure Exchange</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
-    .app { width: 100%; max-width: 700px; background: #ffffff; border-radius: 32px; box-shadow: 0 20px 60px rgba(0,20,40,0.12); padding: 28px 32px 32px; }
-    h1 { font-size: 24px; font-weight: 700; color: #0b1a2f; display: flex; align-items: center; gap: 10px; margin-bottom: 24px; border-bottom: 2px solid #eef2f6; padding-bottom: 16px; }
-    h1 small { font-size: 14px; font-weight: 500; color: #5b6f82; margin-left: auto; }
-    .card { background: #f8fafc; border-radius: 20px; padding: 24px 28px; margin-bottom: 24px; border: 1px solid #eef2f6; }
-    .card-title { font-size: 15px; font-weight: 600; color: #1e2f40; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-    .form-group { margin-bottom: 16px; }
-    label { display: block; font-size: 13px; font-weight: 500; color: #2c3f54; margin-bottom: 4px; }
-    input, textarea, select { width: 100%; padding: 12px 16px; border: 1.5px solid #dde3ea; border-radius: 14px; font-size: 14px; font-family: inherit; background: #fff; transition: border 0.2s, box-shadow 0.2s; color: #0b1a2f; }
-    input:focus, textarea:focus, select:focus { outline: none; border-color: #0b1a2f; box-shadow: 0 0 0 4px rgba(11,26,47,0.08); }
-    textarea { resize: vertical; min-height: 120px; }
-    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 28px; border: none; border-radius: 30px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
-    .btn-primary { background: #0b1a2f; color: #fff; }
-    .btn-primary:hover { background: #1a2f47; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(11,26,47,0.25); }
-    .btn-secondary { background: #e2e8f0; color: #1e2f40; }
-    .btn-secondary:hover { background: #d0d8e3; }
-    .btn-danger { background: #fce8e8; color: #b13a3a; }
-    .btn-danger:hover { background: #f5d6d6; }
-    .btn-block { width: 100%; justify-content: center; }
-    .btn-sm { padding: 6px 16px; font-size: 12px; border-radius: 20px; }
-    .flex { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-    .mt-16 { margin-top: 16px; }
-    .message-list { display: flex; flex-direction: column; gap: 14px; max-height: 460px; overflow-y: auto; padding-right: 4px; }
-    .message-list::-webkit-scrollbar { width: 6px; }
-    .message-list::-webkit-scrollbar-track { background: #eef2f6; border-radius: 10px; }
-    .message-list::-webkit-scrollbar-thumb { background: #c8d2de; border-radius: 10px; }
-    .message-item { background: #fff; border-radius: 18px; padding: 18px 22px; border: 1px solid #eef2f6; animation: slideIn 0.25s ease; }
-    @keyframes slideIn { 0% { opacity:0; transform:translateY(8px); } 100% { opacity:1; transform:translateY(0); } }
-    .message-meta { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 8px; }
-    .message-meta .from { font-weight: 600; font-size: 14px; color: #0b1a2f; }
-    .message-meta .time { font-size: 12px; color: #7b8fa0; }
-    .message-text { font-size: 15px; line-height: 1.6; color: #1e2f40; white-space: pre-wrap; word-break: break-word; }
-    .empty-state { text-align: center; padding: 48px 20px; color: #7b8fa0; }
-    .empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
-    .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #0b1a2f; color: #fff; padding: 14px 32px; border-radius: 40px; font-weight: 500; font-size: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.25); opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none; z-index: 999; }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    .user-info { display: flex; align-items: center; gap: 12px; }
-    .user-info span { font-size: 14px; font-weight: 500; color: #1e2f40; }
-    .receiver-option { display: flex; align-items: center; gap: 10px; }
-    .receiver-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: #ddd; }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>📤 Sender – Secure Exchange</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .app {
+            width: 100%;
+            max-width: 700px;
+            background: #ffffff;
+            border-radius: 32px;
+            box-shadow: 0 20px 60px rgba(0, 20, 40, 0.12);
+            padding: 28px 32px 32px;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0b1a2f;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #eef2f6;
+            padding-bottom: 16px;
+        }
+        h1 small {
+            font-size: 14px;
+            font-weight: 500;
+            color: #5b6f82;
+            margin-left: auto;
+        }
+        .card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 24px 28px;
+            margin-bottom: 24px;
+            border: 1px solid #eef2f6;
+        }
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e2f40;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #2c3f54;
+            margin-bottom: 4px;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid #dde3ea;
+            border-radius: 14px;
+            font-size: 14px;
+            font-family: inherit;
+            background: #fff;
+            transition: border 0.2s, box-shadow 0.2s;
+            color: #0b1a2f;
+            resize: vertical;
+            min-height: 120px;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #0b1a2f;
+            box-shadow: 0 0 0 4px rgba(11, 26, 47, 0.08);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: #0b1a2f;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #1a2f47;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(11, 26, 47, 0.25);
+        }
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #1e2f40;
+        }
+        .btn-secondary:hover {
+            background: #d0d8e3;
+        }
+        .btn-danger {
+            background: #fce8e8;
+            color: #b13a3a;
+        }
+        .btn-danger:hover {
+            background: #f5d6d6;
+        }
+        .btn-block {
+            width: 100%;
+            justify-content: center;
+        }
+        .btn-sm {
+            padding: 6px 16px;
+            font-size: 12px;
+            border-radius: 20px;
+        }
+        .flex {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .mt-16 {
+            margin-top: 16px;
+        }
+        .message-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            max-height: 460px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .message-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .message-list::-webkit-scrollbar-track {
+            background: #eef2f6;
+            border-radius: 10px;
+        }
+        .message-list::-webkit-scrollbar-thumb {
+            background: #c8d2de;
+            border-radius: 10px;
+        }
+        .message-item {
+            background: #fff;
+            border-radius: 18px;
+            padding: 18px 22px;
+            border: 1px solid #eef2f6;
+            animation: slideIn 0.25s ease;
+        }
+        @keyframes slideIn {
+            0% {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .message-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px 12px;
+            margin-bottom: 8px;
+        }
+        .message-meta .from {
+            font-weight: 600;
+            font-size: 14px;
+            color: #0b1a2f;
+        }
+        .message-meta .time {
+            font-size: 12px;
+            color: #7b8fa0;
+        }
+        .message-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #1e2f40;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: #7b8fa0;
+        }
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0b1a2f;
+            color: #fff;
+            padding: 14px 32px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 14px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-info span {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1e2f40;
+        }
+
+        /* ─── Receiver list ─── */
+        .receiver-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 220px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .receiver-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .receiver-list::-webkit-scrollbar-track {
+            background: #eef2f6;
+            border-radius: 10px;
+        }
+        .receiver-list::-webkit-scrollbar-thumb {
+            background: #c8d2de;
+            border-radius: 10px;
+        }
+        .receiver-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 16px;
+            border-radius: 14px;
+            background: #fff;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .receiver-item:hover {
+            background: #f0f4f8;
+        }
+        .receiver-item.selected {
+            border-color: #0b1a2f;
+            background: #eef4fc;
+        }
+        .receiver-item .avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: #eef2f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            font-weight: 600;
+            font-size: 18px;
+            color: #7b8fa0;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .receiver-item .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .receiver-item .avatar:hover {
+            opacity: 0.75;
+        }
+        .receiver-item .info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .receiver-item .name {
+            font-weight: 500;
+            font-size: 15px;
+            color: #0b1a2f;
+        }
+        .receiver-item .check {
+            color: #0b1a2f;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        .receiver-empty {
+            text-align: center;
+            padding: 30px 10px;
+            color: #7b8fa0;
+            font-size: 14px;
+        }
+
+        /* ─── Modal ─── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-content {
+            background: #fff;
+            border-radius: 24px;
+            padding: 20px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        .modal-content img {
+            width: 100%;
+            height: auto;
+            border-radius: 16px;
+            display: block;
+        }
+        .modal-content .close-btn {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            border: none;
+            border-radius: 30px;
+            padding: 6px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .modal-content .close-btn:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+        .modal-content .name-label {
+            text-align: center;
+            margin-top: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            color: #0b1a2f;
+        }
+    </style>
 </head>
 <body>
-<div class="app">
-  <div class="flex-between" style="margin-bottom:16px;">
-    <h1 style="border:none;padding:0;margin:0;">📤 Secure Sender <small>User 2</small></h1>
-    <div class="user-info">
-      <span id="loggedInUser"></span>
-      <button class="btn btn-danger btn-sm" id="logoutBtn">Logout</button>
+    <div class="app">
+        <div class="flex-between" style="margin-bottom:16px;">
+            <h1 style="border:none;padding:0;margin:0;">📤 Secure Sender <small>User 2</small></h1>
+            <div class="user-info">
+                <span id="loggedInUser"></span>
+                <button class="btn btn-danger btn-sm" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">📨 Select Receiver</div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label>Choose a receiver from the list</label>
+                <div id="receiverListContainer" class="receiver-list">
+                    <!-- dynamic receiver items will be rendered here -->
+                    <div class="receiver-empty">Loading receivers…</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">✏️ Compose Message</div>
+            <div class="form-group">
+                <label for="msgText">Message text</label>
+                <textarea id="msgText" placeholder="Write your secure message…"></textarea>
+            </div>
+            <button class="btn btn-primary btn-block" id="sendBtn">📨 Send Message</button>
+        </div>
+
+        <div class="card">
+            <div class="flex-between">
+                <div class="card-title" style="margin-bottom:0;">📤 Messages Sent</div>
+                <button class="btn btn-secondary btn-sm" id="clearSentBtn">Clear all</button>
+            </div>
+            <div id="sentList" class="message-list mt-16">
+                <div class="empty-state"><div class="icon">📭</div><p>No messages sent yet.</p></div>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <div class="card">
-    <div class="card-title">📨 Select Receiver</div>
-    <div class="form-group">
-      <label for="receiverSelect">Choose a receiver</label>
-      <select id="receiverSelect">
-        <option value="">-- Loading receivers --</option>
-      </select>
+    <!-- Modal -->
+    <div class="modal-overlay" id="photoModal">
+        <div class="modal-content">
+            <button class="close-btn" id="modalCloseBtn">✕</button>
+            <img id="modalImage" src="" alt="Receiver photo" />
+            <div class="name-label" id="modalName"></div>
+        </div>
     </div>
-  </div>
 
-  <div class="card">
-    <div class="card-title">✏️ Compose Message</div>
-    <div class="form-group">
-      <label for="msgText">Message text</label>
-      <textarea id="msgText" placeholder="Write your secure message…"></textarea>
-    </div>
-    <button class="btn btn-primary btn-block" id="sendBtn">📨 Send Message</button>
-  </div>
+    <div id="toast" class="toast"></div>
 
-  <div class="card">
-    <div class="flex-between">
-      <div class="card-title" style="margin-bottom:0;">📤 Messages Sent</div>
-      <button class="btn btn-secondary btn-sm" id="clearSentBtn">Clear all</button>
-    </div>
-    <div id="sentList" class="message-list mt-16">
-      <div class="empty-state"><div class="icon">📭</div><p>No messages sent yet.</p></div>
-    </div>
-  </div>
-</div>
-<div id="toast" class="toast"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+    </script>
+    <script>
+        (function() {
+            'use strict';
+            const SUPABASE_URL = '{{SUPABASE_URL}}';
+            const SUPABASE_ANON_KEY = '{{SUPABASE_ANON_KEY}}';
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-(function() {
-  'use strict';
-  const SUPABASE_URL = '{{SUPABASE_URL}}';
-  const SUPABASE_ANON_KEY = '{{SUPABASE_ANON_KEY}}';
+            const DEFAULT_PASSPHRASE = 'my-secure-shared-secret';
 
-  // Fixed passphrase – the sender doesn't need to enter it.
-  const DEFAULT_PASSPHRASE = 'my-secure-shared-secret';
+            const session = localStorage.getItem('secure_session');
+            if (!session) {
+                window.location.href = '/login';
+                return;
+            }
+            let sessionData;
+            try { sessionData = JSON.parse(session); } catch {
+                localStorage.removeItem('secure_session');
+                window.location.href = '/login';
+                return;
+            }
+            if (!sessionData.username || sessionData.role !== 'sender') {
+                localStorage.removeItem('secure_session');
+                window.location.href = '/login';
+                return;
+            }
 
-  const session = localStorage.getItem('secure_session');
-  if (!session) {
-    window.location.href = '/login';
-    return;
-  }
-  let sessionData;
-  try { sessionData = JSON.parse(session); } catch { localStorage.removeItem('secure_session'); window.location.href = '/login'; return; }
-  if (!sessionData.username || sessionData.role !== 'sender') {
-    localStorage.removeItem('secure_session');
-    window.location.href = '/login';
-    return;
-  }
+            if (typeof window.supabase === 'undefined') {
+                document.getElementById('toast').textContent = '❌ Supabase library not loaded.';
+                document.getElementById('toast').classList.add('show');
+                return;
+            }
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  if (typeof window.supabase === 'undefined') {
-    document.getElementById('toast').textContent = '❌ Supabase library not loaded.';
-    document.getElementById('toast').classList.add('show');
-    return;
-  }
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            const loggedInUser = document.getElementById('loggedInUser');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const msgText = document.getElementById('msgText');
+            const sendBtn = document.getElementById('sendBtn');
+            const sentList = document.getElementById('sentList');
+            const clearSentBtn = document.getElementById('clearSentBtn');
+            const toast = document.getElementById('toast');
 
-  // DOM refs
-  const loggedInUser = document.getElementById('loggedInUser');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const receiverSelect = document.getElementById('receiverSelect');
-  const msgText = document.getElementById('msgText');
-  const sendBtn = document.getElementById('sendBtn');
-  const sentList = document.getElementById('sentList');
-  const clearSentBtn = document.getElementById('clearSentBtn');
-  const toast = document.getElementById('toast');
+            // Receiver list container
+            const receiverContainer = document.getElementById('receiverListContainer');
 
-  let allReceivers = [];
+            // Modal
+            const modalOverlay = document.getElementById('photoModal');
+            const modalImage = document.getElementById('modalImage');
+            const modalName = document.getElementById('modalName');
+            const modalCloseBtn = document.getElementById('modalCloseBtn');
 
-  loggedInUser.textContent = `👤 ${sessionData.username}`;
+            let allReceivers = [];
+            let selectedReceiver = null; // full object
 
-  function showToast(msg, duration=2800) {
-    toast.textContent = msg;
-    toast.classList.add('show');
-    clearTimeout(toast._timer);
-    toast._timer = setTimeout(() => toast.classList.remove('show'), duration);
-  }
+            loggedInUser.textContent = `👤 ${sessionData.username}`;
 
-  function logout() {
-    localStorage.removeItem('secure_session');
-    window.location.href = '/login';
-  }
-  logoutBtn.addEventListener('click', logout);
+            function showToast(msg, duration = 2800) {
+                toast.textContent = msg;
+                toast.classList.add('show');
+                clearTimeout(toast._timer);
+                toast._timer = setTimeout(() => toast.classList.remove('show'), duration);
+            }
 
-  // ─── Load receivers with profile images ──────────────────────
-  async function loadReceivers() {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('username, profile_image')
-        .eq('role', 'receiver');
-      if (error) throw error;
-      allReceivers = data || [];
-      receiverSelect.innerHTML = '<option value="">Select a receiver</option>';
-      if (allReceivers.length > 0) {
-        allReceivers.forEach(user => {
-          const option = document.createElement('option');
-          option.value = user.username;
-          // Display avatar + username
-          const avatar = user.profile_image ? `data:image/jpeg;base64,${user.profile_image}` : '';
-          option.innerHTML = avatar ? `<img src="${avatar}" style="width:24px;height:24px;border-radius:50%;vertical-align:middle;margin-right:8px;" /> ${user.username}` : user.username;
-          receiverSelect.appendChild(option);
-        });
-      } else {
-        receiverSelect.innerHTML = '<option value="">No receivers found</option>';
-      }
-    } catch (err) {
-      console.error(err);
-      showToast('Error loading receivers: ' + err.message, 3000);
-    }
-  }
+            function logout() {
+                localStorage.removeItem('secure_session');
+                window.location.href = '/login';
+            }
+            logoutBtn.addEventListener('click', logout);
 
-  // ─── Encryption utilities ──────────────────────────────────────
-  function arrayBufferToBase64(buf) {
-    const bytes = new Uint8Array(buf);
-    let binary = '';
-    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-    return btoa(binary);
-  }
+            // ─── Render receiver list ─────────────────────────────────────
+            function renderReceiverList(receivers) {
+                receiverContainer.innerHTML = '';
+                if (!receivers || receivers.length === 0) {
+                    const empty = document.createElement('div');
+                    empty.className = 'receiver-empty';
+                    empty.textContent = 'No receivers found.';
+                    receiverContainer.appendChild(empty);
+                    return;
+                }
 
-  async function deriveKey(passphrase) {
-    const enc = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey(
-      'raw',
-      enc.encode(passphrase),
-      'PBKDF2',
-      false,
-      ['deriveKey']
-    );
-    return crypto.subtle.deriveKey(
-      {
-        name: 'PBKDF2',
-        salt: enc.encode('SecureExchangeSalt2026'),
-        iterations: 100000,
-        hash: 'SHA-256'
-      },
-      keyMaterial,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['encrypt', 'decrypt']
-    );
-  }
+                receivers.forEach(user => {
+                    const item = document.createElement('div');
+                    item.className = 'receiver-item';
+                    if (selectedReceiver && selectedReceiver.username === user.username) {
+                        item.classList.add('selected');
+                    }
 
-  async function encryptMessage(key, plaintext) {
-    const enc = new TextEncoder();
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plaintext));
-    const combined = new Uint8Array(iv.length + encrypted.byteLength);
-    combined.set(iv, 0);
-    combined.set(new Uint8Array(encrypted), iv.length);
-    return arrayBufferToBase64(combined.buffer);
-  }
+                    // Avatar (clickable for modal)
+                    const avatar = document.createElement('div');
+                    avatar.className = 'avatar';
+                    avatar.dataset.username = user.username;
+                    if (user.profile_image) {
+                        const img = document.createElement('img');
+                        img.src = `data:image/jpeg;base64,${user.profile_image}`;
+                        img.alt = user.username;
+                        img.onerror = function() {
+                            avatar.textContent = user.username.charAt(0).toUpperCase();
+                            avatar.style.background = '#dde3ea';
+                            avatar.style.color = '#0b1a2f';
+                            avatar.style.fontSize = '20px';
+                            avatar.style.fontWeight = '600';
+                        };
+                        avatar.appendChild(img);
+                    } else {
+                        avatar.textContent = user.username.charAt(0).toUpperCase();
+                        avatar.style.background = '#dde3ea';
+                        avatar.style.color = '#0b1a2f';
+                        avatar.style.fontSize = '20px';
+                        avatar.style.fontWeight = '600';
+                    }
+                    // Click on avatar opens modal
+                    avatar.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        openPhotoModal(user);
+                    });
 
-  // ─── Render sent messages ─────────────────────────────────────
-  function formatTime(ts) {
-    return new Date(ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  }
+                    // Info div
+                    const info = document.createElement('div');
+                    info.className = 'info';
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'name';
+                    nameSpan.textContent = user.username;
+                    info.appendChild(nameSpan);
 
-  function escapeHtml(str) {
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
-  }
+                    // Checkmark if selected
+                    const check = document.createElement('span');
+                    check.className = 'check';
+                    if (selectedReceiver && selectedReceiver.username === user.username) {
+                        check.textContent = '✓';
+                    } else {
+                        check.textContent = '';
+                    }
 
-  async function renderSentMessages() {
-    try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('role', 'sender')
-        .eq('sender_username', sessionData.username)
-        .order('timestamp', { ascending: false });
-      if (error) throw error;
-      if (!data || data.length === 0) {
-        sentList.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>No messages sent yet.</p></div>`;
-        return;
-      }
-      const msgs = data.slice().reverse();
-      let html = '';
-      for (const m of msgs) {
-        html += `<div class="message-item">
-          <div class="message-meta"><span class="from">📤 To: ${m.receiver_username || 'Unknown'}</span><span class="time">${formatTime(m.timestamp)}</span></div>
-          <div class="message-text">${escapeHtml(m.text || '')}</div>
-          <div style="margin-top:8px;font-size:12px;color:#7b8fa0;">🔒 encrypted</div>
-        </div>`;
-      }
-      sentList.innerHTML = html;
-    } catch (err) {
-      console.error(err);
-      showToast('Error loading messages: ' + err.message, 3000);
-    }
-  }
+                    item.appendChild(avatar);
+                    item.appendChild(info);
+                    item.appendChild(check);
 
-  // ─── Send message ─────────────────────────────────────────────
-  async function sendMessage() {
-    const receiver = receiverSelect.value;
-    if (!receiver) {
-      showToast('Please select a receiver.', 2000);
-      return;
-    }
-    const text = msgText.value.trim();
-    if (!text) {
-      showToast('Please enter a message.', 2000);
-      return;
-    }
+                    // Click on item selects receiver
+                    item.addEventListener('click', function(e) {
+                        // if click target is avatar, we already handled it
+                        if (e.target.closest('.avatar')) return;
+                        selectReceiver(user);
+                    });
 
-    try {
-      const key = await deriveKey(DEFAULT_PASSPHRASE);
-      const encryptedText = await encryptMessage(key, text);
+                    receiverContainer.appendChild(item);
+                });
+            }
 
-      const newMsg = {
-        text: encryptedText,
-        image: '',
-        timestamp: Date.now(),
-        role: 'sender',
-        receiver_username: receiver,
-        sender_username: sessionData.username
-      };
+            // ─── Select receiver ──────────────────────────────────────────
+            function selectReceiver(user) {
+                selectedReceiver = user;
+                // re-render to update selection indicators
+                renderReceiverList(allReceivers);
+                // close modal if open
+                modalOverlay.classList.remove('active');
+            }
 
-      const { error } = await supabase.from('messages').insert([newMsg]);
-      if (error) throw error;
-      msgText.value = '';
-      showToast(`📨 Message sent to ${receiver}!`, 2000);
-      await renderSentMessages();
-    } catch (err) {
-      console.error(err);
-      showToast('Error sending message: ' + err.message, 3000);
-    }
-  }
+            // ─── Load receivers ──────────────────────────────────────────
+            async function loadReceivers() {
+                try {
+                    const { data, error } = await supabase
+                        .from('users')
+                        .select('username, profile_image')
+                        .eq('role', 'receiver');
+                    if (error) throw error;
+                    allReceivers = data || [];
+                    // if there is a previously selected receiver, keep it if still in list
+                    if (selectedReceiver) {
+                        const stillExists = allReceivers.some(u => u.username === selectedReceiver.username);
+                        if (!stillExists) {
+                            selectedReceiver = null;
+                        }
+                    }
+                    renderReceiverList(allReceivers);
+                } catch (err) {
+                    console.error(err);
+                    showToast('Error loading receivers: ' + err.message, 3000);
+                }
+            }
 
-  // ─── Clear sent messages ──────────────────────────────────────
-  async function clearSent() {
-    if (!confirm('Delete all sent messages?')) return;
-    try {
-      const { error } = await supabase
-        .from('messages')
-        .delete()
-        .eq('role', 'sender')
-        .eq('sender_username', sessionData.username);
-      if (error) throw error;
-      await renderSentMessages();
-      showToast('Sent messages cleared.', 1500);
-    } catch (err) {
-      console.error(err);
-      showToast('Error clearing messages: ' + err.message, 3000);
-    }
-  }
+            // ─── Encryption utilities ────────────────────────────────────
+            function arrayBufferToBase64(buf) {
+                const bytes = new Uint8Array(buf);
+                let binary = '';
+                for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+                return btoa(binary);
+            }
 
-  // ─── Event listeners ──────────────────────────────────────────
-  sendBtn.addEventListener('click', sendMessage);
-  msgText.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      sendMessage();
-    }
-  });
-  clearSentBtn.addEventListener('click', clearSent);
+            async function deriveKey(passphrase) {
+                const enc = new TextEncoder();
+                const keyMaterial = await crypto.subtle.importKey(
+                    'raw',
+                    enc.encode(passphrase),
+                    'PBKDF2',
+                    false,
+                    ['deriveKey']
+                );
+                return crypto.subtle.deriveKey({
+                        name: 'PBKDF2',
+                        salt: enc.encode('SecureExchangeSalt2026'),
+                        iterations: 100000,
+                        hash: 'SHA-256'
+                    },
+                    keyMaterial, { name: 'AES-GCM', length: 256 },
+                    false,
+                    ['encrypt', 'decrypt']
+                );
+            }
 
-  // ─── Initial load ─────────────────────────────────────────────
-  loadReceivers();
-  renderSentMessages();
-  showToast('Select a receiver and type your message.', 3000);
-})();
-</script>
+            async function encryptMessage(key, plaintext) {
+                const enc = new TextEncoder();
+                const iv = crypto.getRandomValues(new Uint8Array(12));
+                const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plaintext));
+                const combined = new Uint8Array(iv.length + encrypted.byteLength);
+                combined.set(iv, 0);
+                combined.set(new Uint8Array(encrypted), iv.length);
+                return arrayBufferToBase64(combined.buffer);
+            }
+
+            // ─── Render sent messages ────────────────────────────────────
+            function formatTime(ts) {
+                return new Date(ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit',
+                    minute: '2-digit' });
+            }
+
+            function escapeHtml(str) {
+                const d = document.createElement('div');
+                d.textContent = str;
+                return d.innerHTML;
+            }
+
+            async function renderSentMessages() {
+                try {
+                    const { data, error } = await supabase
+                        .from('messages')
+                        .select('*')
+                        .eq('role', 'sender')
+                        .eq('sender_username', sessionData.username)
+                        .order('timestamp', { ascending: false });
+                    if (error) throw error;
+                    if (!data || data.length === 0) {
+                        sentList.innerHTML =
+                            `<div class="empty-state"><div class="icon">📭</div><p>No messages sent yet.</p></div>`;
+                        return;
+                    }
+                    const msgs = data.slice().reverse();
+                    let html = '';
+                    for (const m of msgs) {
+                        html += `<div class="message-item">
+                  <div class="message-meta"><span class="from">📤 To: ${m.receiver_username || 'Unknown'}</span><span class="time">${formatTime(m.timestamp)}</span></div>
+                  <div class="message-text">${escapeHtml(m.text || '')}</div>
+                  <div style="margin-top:8px;font-size:12px;color:#7b8fa0;">🔒 encrypted</div>
+                </div>`;
+                    }
+                    sentList.innerHTML = html;
+                } catch (err) {
+                    console.error(err);
+                    showToast('Error loading messages: ' + err.message, 3000);
+                }
+            }
+
+            // ─── Send message ────────────────────────────────────────────
+            async function sendMessage() {
+                if (!selectedReceiver) {
+                    showToast('Please select a receiver from the list.', 2000);
+                    return;
+                }
+                const text = msgText.value.trim();
+                if (!text) {
+                    showToast('Please enter a message.', 2000);
+                    return;
+                }
+
+                try {
+                    const key = await deriveKey(DEFAULT_PASSPHRASE);
+                    const encryptedText = await encryptMessage(key, text);
+
+                    const newMsg = {
+                        text: encryptedText,
+                        image: '',
+                        timestamp: Date.now(),
+                        role: 'sender',
+                        receiver_username: selectedReceiver.username,
+                        sender_username: sessionData.username
+                    };
+
+                    const { error } = await supabase.from('messages').insert([newMsg]);
+                    if (error) throw error;
+                    msgText.value = '';
+                    showToast(`📨 Message sent to ${selectedReceiver.username}!`, 2000);
+                    await renderSentMessages();
+                } catch (err) {
+                    console.error(err);
+                    showToast('Error sending message: ' + err.message, 3000);
+                }
+            }
+
+            // ─── Clear sent messages ─────────────────────────────────────
+            async function clearSent() {
+                if (!confirm('Delete all sent messages?')) return;
+                try {
+                    const { error } = await supabase
+                        .from('messages')
+                        .delete()
+                        .eq('role', 'sender')
+                        .eq('sender_username', sessionData.username);
+                    if (error) throw error;
+                    await renderSentMessages();
+                    showToast('Sent messages cleared.', 1500);
+                } catch (err) {
+                    console.error(err);
+                    showToast('Error clearing messages: ' + err.message, 3000);
+                }
+            }
+
+            // ─── Photo modal ──────────────────────────────────────────────
+            function openPhotoModal(user) {
+                if (!user) {
+                    showToast('No receiver selected.', 2000);
+                    return;
+                }
+                if (!user.profile_image) {
+                    showToast('This receiver has no profile photo.', 2000);
+                    return;
+                }
+                const imgSrc = `data:image/jpeg;base64,${user.profile_image}`;
+                modalImage.src = imgSrc;
+                modalName.textContent = user.username;
+                modalOverlay.classList.add('active');
+            }
+
+            function closePhotoModal() {
+                modalOverlay.classList.remove('active');
+            }
+
+            // ─── Event listeners ─────────────────────────────────────────
+            sendBtn.addEventListener('click', sendMessage);
+            msgText.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            clearSentBtn.addEventListener('click', clearSent);
+
+            // Modal close
+            modalCloseBtn.addEventListener('click', closePhotoModal);
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === modalOverlay) {
+                    closePhotoModal();
+                }
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closePhotoModal();
+                }
+            });
+
+            // ─── Initial load ─────────────────────────────────────────────
+            loadReceivers();
+            renderSentMessages();
+            showToast('Select a receiver from the list and type your message.', 3000);
+        })();
+    </script>
 </body>
 </html>
